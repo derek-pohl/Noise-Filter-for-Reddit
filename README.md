@@ -1,2 +1,2 @@
 # Noise-Filter-for-Reddit
-A browser extention that blocks content that is of no intrinsic value to the user. Can block posts with unfunny jokes, politics, rage-bait, and other low-effort content that clutters your feed. Leaves only the content that's funny, educational, or just generally useful.
+A browser extension that blocks content that is of no intrinsic value to the user. Can block posts with unfunny jokes, politics, rage-bait, and other low-effort content that clutters your feed. Leaves only the content that's funny, educational, or just generally useful.

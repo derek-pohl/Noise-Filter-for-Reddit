@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Noise Filter Options</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <h1>Noise Filter for Reddit</h1>
+    <div class="container">
+        <label for="apiKey">API Key:</label>
+        <input type="password" id="apiKey" placeholder="Enter your API key">
+        
+        <label for="baseUrl">Base URL:</label>
+        <input type="text" id="baseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
+        <small>For OpenAI: https://api.openai.com/v1<br>
+               For Gemini via OpenAI: https://generativelanguage.googleapis.com/v1beta/openai<br>
+               For local servers: http://localhost:1234/v1</small>
+        
+        <label for="model">Model:</label>
+        <input type="text" id="model" placeholder="gemma-3-27b-it">
+        <small>Examples: gemma-3-27b-it, gpt-4o-mini, gpt-3.5-turbo, llama-3.1-8b-instruct</small>
+        
+        <button id="saveButton">Save</button>
+        <p id="status"></p>
+    </div>
+
+    <hr>
+
+    <h2>Activity Log</h2>
+    <div class="log-controls">
+        <button id="refreshLogButton">Refresh</button>
+        <button id="clearLogButton">Clear Log</button>
+    </div>
+    <div id="logContainer"></div>
+    <script src="../lib/webextension-polyfill.js"></script>
+    <script src="options.js"></script>
+</body>
+</html>

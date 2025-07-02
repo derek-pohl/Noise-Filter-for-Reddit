@@ -2,11 +2,37 @@ const apiKeyInput = document.getElementById('apiKey');
 const baseUrlInput = document.getElementById('baseUrl');
 const modelInput = document.getElementById('model');
 const rateLimitInput = document.getElementById('rateLimit');
+const whitelistedSubsInput = document.getElementById('whitelistedSubs');
 const saveButton = document.getElementById('saveButton');
+const saveButton2 = document.getElementById('saveButton2');
+const saveButton3 = document.getElementById('saveButton3');
 const statusEl = document.getElementById('status');
+const statusEl2 = document.getElementById('status2');
+const statusEl3 = document.getElementById('status3');
 const logContainer = document.getElementById('logContainer');
 const refreshLogButton = document.getElementById('refreshLogButton');
 const clearLogButton = document.getElementById('clearLogButton');
+
+// Content filter elements
+const filterToggles = document.querySelectorAll('.toggle-switch');
+const filterOptions = document.querySelectorAll('.filter-option');
+
+// Initialize filter toggles
+filterToggles.forEach(toggle => {
+    toggle.addEventListener('click', () => {
+        const filterId = toggle.dataset.toggle;
+        const isEnabled = toggle.classList.contains('enabled');
+        const filterOption = document.querySelector(`.filter-option[data-filter="${filterId}"]`);
+        
+        if (isEnabled) {
+            toggle.classList.remove('enabled');
+            filterOption.classList.remove('enabled');
+        } else {
+            toggle.classList.add('enabled');
+            filterOption.classList.add('enabled');
+        }
+    });
+});
 
 function saveOptions() {
     const apiKey = apiKeyInput.value;
@@ -14,37 +40,84 @@ function saveOptions() {
     const model = modelInput.value;
     const rateLimit = parseInt(rateLimitInput.value) || 60;
     
+    // Get whitelisted subreddits
+    const whitelistedSubs = whitelistedSubsInput.value
+        .split('\n')
+        .map(sub => sub.trim().toLowerCase())
+        .filter(sub => sub.length > 0);
+    
+    // Get enabled filters (including extension enabled state)
+    const enabledFilters = {};
+    filterToggles.forEach(toggle => {
+        const filterId = toggle.dataset.toggle;
+        enabledFilters[filterId] = toggle.classList.contains('enabled');
+    });
+    
     // Validate required fields
     if (!apiKey || !baseUrl || !model) {
-        showStatus('API Key, Base URL, and Model are required!', 'error');
+        showStatus('API Key, Base URL, and Model are required!', 'error', statusEl);
+        if (statusEl2) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl2);
+        if (statusEl3) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl3);
         return;
     }
     
     // Validate rate limit
     if (rateLimit < 1 || rateLimit > 600) {
-        showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error');
+        showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl);
+        if (statusEl2) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl2);
+        if (statusEl3) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl3);
         return;
     }
     
-    browser.storage.sync.set({ apiKey, baseUrl, model, rateLimit }).then(() => {
-        showStatus('Settings saved successfully!', 'success');
+    browser.storage.sync.set({ apiKey, baseUrl, model, rateLimit, enabledFilters, whitelistedSubs }).then(() => {
+        showStatus('Settings saved successfully!', 'success', statusEl);
+        if (statusEl2) showStatus('Settings saved successfully!', 'success', statusEl2);
+        if (statusEl3) showStatus('Settings saved successfully!', 'success', statusEl3);
     });
 }
 
-function showStatus(message, type) {
-    statusEl.textContent = message;
-    statusEl.className = `status-message show ${type}`;
+function showStatus(message, type, statusElement = statusEl) {
+    statusElement.textContent = message;
+    statusElement.className = `status-message show ${type}`;
     setTimeout(() => {
-        statusEl.className = 'status-message';
+        statusElement.className = 'status-message';
     }, 3000);
 }
 
 function restoreOptions() {
-    browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'rateLimit']).then((result) => {
+    browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'rateLimit', 'enabledFilters', 'whitelistedSubs']).then((result) => {
         apiKeyInput.value = result.apiKey || '';
         baseUrlInput.value = result.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
         modelInput.value = result.model || 'gemma-3-27b-it';
         rateLimitInput.value = result.rateLimit || 60;
+        
+        // Restore whitelisted subreddits
+        const whitelistedSubs = result.whitelistedSubs || [];
+        whitelistedSubsInput.value = whitelistedSubs.join('\n');
+        
+        // Restore filter states (default all content filters to enabled, circlejerk to enabled, extension enabled for first-time users)
+        const enabledFilters = result.enabledFilters || {
+            'extension-enabled': true,
+            unfunny: true,
+            politics: true,
+            ragebait: true,
+            loweffort: true,
+            advertisement: true,
+            circlejerk: true
+        };
+        
+        filterToggles.forEach(toggle => {
+            const filterId = toggle.dataset.toggle;
+            const filterOption = document.querySelector(`.filter-option[data-filter="${filterId}"]`);
+            
+            if (enabledFilters[filterId]) {
+                toggle.classList.add('enabled');
+                filterOption.classList.add('enabled');
+            } else {
+                toggle.classList.remove('enabled');
+                filterOption.classList.remove('enabled');
+            }
+        });
     });
 }
 
@@ -98,5 +171,7 @@ function escapeHtml(unsafe) {
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.addEventListener('DOMContentLoaded', renderLogs);
 saveButton.addEventListener('click', saveOptions);
+if (saveButton2) saveButton2.addEventListener('click', saveOptions);
+if (saveButton3) saveButton3.addEventListener('click', saveOptions);
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);

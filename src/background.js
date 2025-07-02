@@ -63,7 +63,26 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "analyzePost") {
         const { post } = message;
 
-        const { apiKey, baseUrl, model } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model']);
+        const { apiKey, baseUrl, model, enabledFilters, whitelistedSubs } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'enabledFilters', 'whitelistedSubs']);
+        
+        // Check if extension is enabled
+        const defaultFilters = {
+            'extension-enabled': true,
+            unfunny: true,
+            politics: true,
+            ragebait: true,
+            loweffort: true,
+            advertisement: true,
+            circlejerk: true
+        };
+        const activeFilters = { ...defaultFilters, ...enabledFilters };
+        
+        if (!activeFilters['extension-enabled']) {
+            console.log("Noise Filter: Extension is disabled. Skipping analysis.");
+            await logActivity(post, { skipped: true, reason: 'Extension disabled' }, 'disabled', 'Extension is disabled');
+            return;
+        }
+        
         if (!apiKey) {
             console.warn("Noise Filter: API key not set. Please set it in the extension options.");
             return; // Don't proceed without an API key
@@ -77,6 +96,25 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             return; // Don't proceed without a model
         }
 
+        // Extract subreddit name without r/ prefix
+        const subredditName = post.subreddit.replace(/^r\//, '').toLowerCase();
+        
+        // Check if subreddit is whitelisted
+        const whitelistedSubreddits = whitelistedSubs || [];
+        if (whitelistedSubreddits.includes(subredditName)) {
+            console.log(`Noise Filter: Skipping analysis for whitelisted subreddit: ${post.subreddit}`);
+            await logActivity(post, { skipped: true, reason: 'Whitelisted subreddit' }, 'whitelisted', 'Subreddit is whitelisted');
+            return;
+        }
+        
+        // Check circlejerk filter setting        
+        // If circlejerk filtering is disabled and this is a circlejerk subreddit, skip it
+        if (!activeFilters.circlejerk && subredditName.includes('circlejerk')) {
+            console.log(`Noise Filter: Skipping analysis for circlejerk subreddit: ${post.subreddit}`);
+            await logActivity(post, { skipped: true, reason: 'Circlejerk subreddit (filtering disabled)' }, 'circlejerk-skip', 'Circlejerk filtering is disabled');
+            return;
+        }
+
         let apiResponse = null;
         let actionTaken = 'safe';
         let reason = 'Post was deemed safe.';
@@ -84,7 +122,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         try {
             // Add the API call to the rate-limited queue
             const apiResult = await rateLimiter.addToQueue(() => 
-                callOpenAIApi(post, apiKey, baseUrl, model)
+                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters)
             );
             
             const { prompt, responseData, parsedResponse } = apiResult;
@@ -127,22 +165,57 @@ async function logActivity(post, apiData, action, reason) {
     await browser.storage.local.set({ activityLog: newLog });
 }
 
-async function callOpenAIApi(post, apiKey, baseUrl, model) {
+async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}) {
+    // Build the content types list based on enabled filters
+    const contentTypes = [];
+    const filterDescriptions = {
+        unfunny: 'unfunny jokes, such as those that are cringe. Normal jokes are OK.',
+        politics: 'politics which criticise a political figure, or a political party, or simply mention a political figure. Note that public figures are not always political figures',
+        ragebait: 'rage-bait',
+        loweffort: 'low-effort content, this can mean a post that the writer of the post could have EASILY used google. If a hard google search would need to be used, it\'s not low effort. Some posts may ask a question that\'s more open ended which doesn\'t always make them low effort. low effort content can also be unrelated to asking questions,',
+        advertisement: 'advertisement'
+    };
+
+    // Default to all filters enabled if no preferences are set
+    const defaultFilters = {
+        'extension-enabled': true,
+        unfunny: true,
+        politics: true,
+        ragebait: true,
+        loweffort: true,
+        advertisement: true
+    };
+
+    const activeFilters = { ...defaultFilters, ...enabledFilters };
+    const activeTags = [];
+
+    Object.keys(filterDescriptions).forEach(key => {
+        if (activeFilters[key]) {
+            contentTypes.push(filterDescriptions[key]);
+            activeTags.push(key);
+        }
+    });
+
+    // If no filters are enabled, don't block anything
+    if (contentTypes.length === 0) {
+        return {
+            prompt: 'No content filters enabled',
+            responseData: { choices: [{ message: { content: '{"blocked_topic": "safe", "blocked_reason": "No filters enabled", "post_description": "Analysis skipped"}' } }] },
+            parsedResponse: { blocked_topic: "safe", blocked_reason: "No filters enabled", post_description: "Analysis skipped" }
+        };
+    }
+
     const prompt = `You are a content detector. You block content on reddit which is of NO intrinsic value to the user.
 
 The user has determined that these type of posts are of no value to them:
 
-unfunny jokes, such as those that are cringe. Normal jokes are OK.
-politics which criticise a poltitical figure, or a political party, or simply mention a political figure.
-rage-bait
-low-effort content, this can mean a post that the writer of the post could have EASILY used google. If a hard google search would need to be used, it's not low effort. Some posts may ask a question that's more open ended which doesn't always make them low effort. low effort content can also be unrelated to asking questions,
-advertisement
+${contentTypes.join('\n')}
 
-Remember, if the post doesn't resemble any of these, put "safe" for the "blocked_reason" and "blocked_topic" otherwise use the tags "unfunny" "politics" "ragebait" "loweffort"  or "advertisement" along with a reason why in the "blocked_reason"
+Remember, if the post doesn't resemble any of these, put "safe" for the "blocked_reason" and "blocked_topic" otherwise use the tags "${activeTags.join('", "')}" along with a reason why in the "blocked_reason"
 
 Remember, the sub name is also important. Eg, r/shittymoviedetails is designed to have shitty posts with shitty titles!
 
-Based on this and the post at the top, respond ONLY in JSON format, such as in the example below:
+Based on this and the post at the top, respond ONLY in JSON format, such as in the example below (in this example, the user has determined that they don't want to see politics):
 
 {
   "post_description": "News article about Donald Trump's Political Actions.",

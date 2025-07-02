@@ -15,13 +15,24 @@
     
     <div class="container">
         <div class="card">
+            <h2>Extension Status</h2>
+            
+            <div class="filter-option" data-filter="extension-enabled" style="margin-bottom: 0;">
+                <div class="toggle-switch enabled" data-toggle="extension-enabled"></div>
+                <div class="filter-content">
+                    <div class="filter-title">Enable Noise Filter</div>
+                    <div class="filter-description">Turn the extension on or off. When disabled, no posts will be analyzed or filtered.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
             <h2>API Configuration</h2>
             
             <div class="form-group">
                 <label for="apiKey">API Key</label>
                 <div class="input-wrapper">
                     <input type="password" id="apiKey" placeholder="Enter your API key">
-                    <span class="input-icon">🔑</span>
                 </div>
             </div>
             
@@ -29,7 +40,6 @@
                 <label for="baseUrl">Base URL</label>
                 <div class="input-wrapper">
                     <input type="text" id="baseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
-                    <span class="input-icon">🌐</span>
                 </div>
                 <div class="help-text">
                     <div class="help-item"><strong>OpenAI:</strong> https://api.openai.com/v1</div>
@@ -42,7 +52,6 @@
                 <label for="model">Model</label>
                 <div class="input-wrapper">
                     <input type="text" id="model" placeholder="gemma-3-27b-it">
-                    <span class="input-icon">🤖</span>
                 </div>
                 <div class="help-text">
                     Examples: gemma-3-27b-it, gpt-4o-mini, gemini-2.0-flash-lite
@@ -53,7 +62,6 @@
                 <label for="rateLimit">Rate Limit (requests per minute)</label>
                 <div class="input-wrapper">
                     <input type="number" id="rateLimit" placeholder="60" min="1" max="600" step="1">
-                    <span class="input-icon">⏱️</span>
                 </div>
                 <div class="help-text">
                     Maximum number of API requests per minute (1-600). Lower values reduce API costs but may delay filtering.
@@ -62,7 +70,6 @@
             
             <div class="button-group">
                 <button id="saveButton" class="btn-primary">
-                    <span class="btn-icon">💾</span>
                     Save Settings
                 </button>
             </div>
@@ -71,14 +78,98 @@
         </div>
 
         <div class="card">
+            <h2>Content Filtering Options</h2>
+            <p class="help-text" style="margin-bottom: 16px;">Choose which types of content you want to filter out. Only enabled filters will be used to analyze posts.</p>
+            
+            <div class="content-filters">
+                <div class="filter-option" data-filter="unfunny">
+                    <div class="toggle-switch" data-toggle="unfunny"></div>
+                    <div class="filter-content">
+                        <div class="filter-title">Unfunny Jokes</div>
+                        <div class="filter-description">Block cringe-worthy or unfunny humor. Normal, genuinely funny jokes will still be allowed.</div>
+                    </div>
+                </div>
+                
+                <div class="filter-option" data-filter="politics">
+                    <div class="toggle-switch" data-toggle="politics"></div>
+                    <div class="filter-content">
+                        <div class="filter-title">Political Content</div>
+                        <div class="filter-description">Block posts that criticize political figures, parties, or mention politicians.</div>
+                    </div>
+                </div>
+                
+                <div class="filter-option" data-filter="ragebait">
+                    <div class="toggle-switch" data-toggle="ragebait"></div>
+                    <div class="filter-content">
+                        <div class="filter-title">Rage Bait</div>
+                        <div class="filter-description">Block content designed to provoke anger or strong emotional reactions for engagement.</div>
+                    </div>
+                </div>
+                
+                <div class="filter-option" data-filter="loweffort">
+                    <div class="toggle-switch" data-toggle="loweffort"></div>
+                    <div class="filter-content">
+                        <div class="filter-title">Low-Effort Content</div>
+                        <div class="filter-description">Block posts with questions that could be easily answered with a simple Google search.</div>
+                    </div>
+                </div>
+                
+                <div class="filter-option" data-filter="advertisement">
+                    <div class="toggle-switch" data-toggle="advertisement"></div>
+                    <div class="filter-content">
+                        <div class="filter-title">Advertisements</div>
+                        <div class="filter-description">Block content which may be promoting a service. This does NOT block ads on reddit, only user made posts.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="saveButton3" class="btn-primary">
+                    Save Settings
+                </button>
+            </div>
+            
+            <div id="status3" class="status-message"></div>
+        </div>
+
+        <div class="card">
+            <h2>Subreddit Exceptions</h2>
+            <p class="help-text" style="margin-bottom: 16px;">Configure which subreddits should be excluded from filtering.</p>
+            
+            <div class="form-group">
+                <label for="whitelistedSubs">Whitelisted Subreddits</label>
+                <div class="input-wrapper">
+                    <textarea id="whitelistedSubs" placeholder="Enter subreddit names, one per line (without r/ prefix)&#10;Example:&#10;AskReddit&#10;explainlikeimfive&#10;nostupidquestions" rows="4"></textarea>
+                </div>
+                <div class="help-text">
+                    Enter subreddit names without the "r/" prefix, one per line. Posts from these subreddits will never be filtered.
+                </div>
+            </div>
+            
+            <div class="filter-option" data-filter="circlejerk">
+                <div class="toggle-switch enabled" data-toggle="circlejerk"></div>
+                <div class="filter-content">
+                    <div class="filter-title">Filter Circlejerk Subreddits</div>
+                    <div class="filter-description">When enabled, subreddits with "circlejerk" in the name will be filtered. When disabled, these subreddits are automatically whitelisted since they're meant to be satirical.</div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="saveButton2" class="btn-primary">
+                    Save Settings
+                </button>
+            </div>
+            
+            <div id="status2" class="status-message"></div>
+        </div>
+
+        <div class="card">
             <h2>Activity Log</h2>
             <div class="log-controls">
                 <button id="refreshLogButton" class="btn-secondary">
-                    <span class="btn-icon">🔄</span>
                     Refresh
                 </button>
                 <button id="clearLogButton" class="btn-danger">
-                    <span class="btn-icon">🗑️</span>
                     Clear Log
                 </button>
             </div>

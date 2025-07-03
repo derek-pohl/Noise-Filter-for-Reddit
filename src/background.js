@@ -81,12 +81,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         // Check if extension is enabled
         const defaultFilters = {
             'extension-enabled': true,
-            unfunny: true,
-            politics: true,
-            ragebait: true,
-            loweffort: true,
-            advertisement: true,
-            circlejerk: true
+            'json-output': false,
+            unfunny: false,
+            politics: false,
+            ragebait: false,
+            loweffort: false,
+            advertisement: false,
+            circlejerk: false
         };
         const activeFilters = { ...defaultFilters, ...enabledFilters };
         
@@ -199,11 +200,11 @@ async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, 
     // Default to all filters enabled if no preferences are set
     const defaultFilters = {
         'extension-enabled': true,
-        unfunny: true,
-        politics: true,
-        ragebait: true,
-        loweffort: true,
-        advertisement: true
+        unfunny: false,
+        politics: false,
+        ragebait: false,
+        loweffort: false,
+        advertisement: false
     };
 
     const activeFilters = { ...defaultFilters, ...enabledFilters };

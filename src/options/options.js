@@ -3,9 +3,11 @@ const baseUrlInput = document.getElementById('baseUrl');
 const modelInput = document.getElementById('model');
 const rateLimitInput = document.getElementById('rateLimit');
 const whitelistedSubsInput = document.getElementById('whitelistedSubs');
+const saveButton0 = document.getElementById('saveButton0');
 const saveButton = document.getElementById('saveButton');
 const saveButton2 = document.getElementById('saveButton2');
 const saveButton3 = document.getElementById('saveButton3');
+const statusEl0 = document.getElementById('status0');
 const statusEl = document.getElementById('status');
 const statusEl2 = document.getElementById('status2');
 const statusEl3 = document.getElementById('status3');
@@ -55,6 +57,7 @@ function saveOptions() {
     
     // Validate required fields
     if (!apiKey || !baseUrl || !model) {
+        if (statusEl0) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl0);
         showStatus('API Key, Base URL, and Model are required!', 'error', statusEl);
         if (statusEl2) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl2);
         if (statusEl3) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl3);
@@ -63,6 +66,7 @@ function saveOptions() {
     
     // Validate rate limit
     if (rateLimit < 1 || rateLimit > 600) {
+        if (statusEl0) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl0);
         showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl);
         if (statusEl2) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl2);
         if (statusEl3) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl3);
@@ -70,6 +74,7 @@ function saveOptions() {
     }
     
     browser.storage.sync.set({ apiKey, baseUrl, model, rateLimit, enabledFilters, whitelistedSubs }).then(() => {
+        if (statusEl0) showStatus('Settings saved successfully!', 'success', statusEl0);
         showStatus('Settings saved successfully!', 'success', statusEl);
         if (statusEl2) showStatus('Settings saved successfully!', 'success', statusEl2);
         if (statusEl3) showStatus('Settings saved successfully!', 'success', statusEl3);
@@ -89,7 +94,7 @@ function restoreOptions() {
         apiKeyInput.value = result.apiKey || '';
         baseUrlInput.value = result.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
         modelInput.value = result.model || 'gemma-3-27b-it';
-        rateLimitInput.value = result.rateLimit || 60;
+        rateLimitInput.value = result.rateLimit || 30;
         
         // Restore whitelisted subreddits
         const whitelistedSubs = result.whitelistedSubs || [];
@@ -98,13 +103,13 @@ function restoreOptions() {
         // Restore filter states (default all content filters to enabled, circlejerk to enabled, extension enabled, json-output enabled for first-time users)
         const enabledFilters = result.enabledFilters || {
             'extension-enabled': true,
-            'json-output': true,
-            unfunny: true,
-            politics: true,
-            ragebait: true,
-            loweffort: true,
-            advertisement: true,
-            circlejerk: true
+            'json-output': false,
+            unfunny: false,
+            politics: false,
+            ragebait: false,
+            loweffort: false,
+            advertisement: false,
+            circlejerk: false
         };
         
         filterToggles.forEach(toggle => {
@@ -171,6 +176,7 @@ function escapeHtml(unsafe) {
 
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.addEventListener('DOMContentLoaded', renderLogs);
+if (saveButton0) saveButton0.addEventListener('click', saveOptions);
 saveButton.addEventListener('click', saveOptions);
 if (saveButton2) saveButton2.addEventListener('click', saveOptions);
 if (saveButton3) saveButton3.addEventListener('click', saveOptions);

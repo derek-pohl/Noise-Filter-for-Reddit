@@ -7,10 +7,12 @@ const saveButton0 = document.getElementById('saveButton0');
 const saveButton = document.getElementById('saveButton');
 const saveButton2 = document.getElementById('saveButton2');
 const saveButton3 = document.getElementById('saveButton3');
+const saveButton4 = document.getElementById('saveButton4');
 const statusEl0 = document.getElementById('status0');
 const statusEl = document.getElementById('status');
 const statusEl2 = document.getElementById('status2');
 const statusEl3 = document.getElementById('status3');
+const statusEl4 = document.getElementById('status4');
 const logContainer = document.getElementById('logContainer');
 const refreshLogButton = document.getElementById('refreshLogButton');
 const clearLogButton = document.getElementById('clearLogButton');
@@ -61,6 +63,7 @@ function saveOptions() {
         showStatus('API Key, Base URL, and Model are required!', 'error', statusEl);
         if (statusEl2) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl2);
         if (statusEl3) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl3);
+        if (statusEl4) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl4);
         return;
     }
     
@@ -70,6 +73,7 @@ function saveOptions() {
         showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl);
         if (statusEl2) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl2);
         if (statusEl3) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl3);
+        if (statusEl4) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl4);
         return;
     }
     
@@ -78,6 +82,7 @@ function saveOptions() {
         showStatus('Settings saved successfully!', 'success', statusEl);
         if (statusEl2) showStatus('Settings saved successfully!', 'success', statusEl2);
         if (statusEl3) showStatus('Settings saved successfully!', 'success', statusEl3);
+        if (statusEl4) showStatus('Settings saved successfully!', 'success', statusEl4);
     });
 }
 
@@ -109,7 +114,11 @@ function restoreOptions() {
             ragebait: false,
             loweffort: false,
             advertisement: false,
-            circlejerk: false
+            circlejerk: false,
+            'home-page': true,
+            'popular-page': true,
+            'all-page': true,
+            'subreddit-page': true
         };
         
         filterToggles.forEach(toggle => {
@@ -180,5 +189,6 @@ if (saveButton0) saveButton0.addEventListener('click', saveOptions);
 saveButton.addEventListener('click', saveOptions);
 if (saveButton2) saveButton2.addEventListener('click', saveOptions);
 if (saveButton3) saveButton3.addEventListener('click', saveOptions);
+if (saveButton4) saveButton4.addEventListener('click', saveOptions);
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);

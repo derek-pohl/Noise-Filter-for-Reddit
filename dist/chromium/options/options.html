@@ -148,6 +148,51 @@
         </div>
 
         <div class="card">
+            <h2>Page Filtering</h2>
+            <p class="help-text" style="margin-bottom: 16px;">Configure which Reddit pages the extension should work on. The extension is automatically disabled on individual post pages.</p>
+            
+            <div class="filter-option" data-filter="home-page">
+                <div class="toggle-switch enabled" data-toggle="home-page"></div>
+                <div class="filter-content">
+                    <div class="filter-title">Reddit Home Page</div>
+                    <div class="filter-description">Enable filtering on https://www.reddit.com/ and https://www.reddit.com/?feed=home</div>
+                </div>
+            </div>
+            
+            <div class="filter-option" data-filter="popular-page">
+                <div class="toggle-switch enabled" data-toggle="popular-page"></div>
+                <div class="filter-content">
+                    <div class="filter-title">Popular Page</div>
+                    <div class="filter-description">Enable filtering on https://www.reddit.com/r/popular/</div>
+                </div>
+            </div>
+            
+            <div class="filter-option" data-filter="all-page">
+                <div class="toggle-switch enabled" data-toggle="all-page"></div>
+                <div class="filter-content">
+                    <div class="filter-title">All Page</div>
+                    <div class="filter-description">Enable filtering on https://www.reddit.com/r/all/</div>
+                </div>
+            </div>
+            
+            <div class="filter-option" data-filter="subreddit-page">
+                <div class="toggle-switch enabled" data-toggle="subreddit-page"></div>
+                <div class="filter-content">
+                    <div class="filter-title">Individual Subreddits</div>
+                    <div class="filter-description">Enable filtering when browsing specific subreddits (e.g., https://www.reddit.com/r/pcmasterrace/)</div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="saveButton4" class="btn-primary">
+                    Save Settings
+                </button>
+            </div>
+            
+            <div id="status4" class="status-message"></div>
+        </div>
+
+        <div class="card">
             <h2>Subreddit Exceptions</h2>
             <p class="help-text" style="margin-bottom: 16px;">Configure which subreddits should be excluded from filtering.</p>
             

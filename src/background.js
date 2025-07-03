@@ -122,7 +122,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         try {
             // Add the API call to the rate-limited queue
             const apiResult = await rateLimiter.addToQueue(() => 
-                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters)
+                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output'])
             );
             
             const { prompt, responseData, parsedResponse } = apiResult;
@@ -165,12 +165,12 @@ async function logActivity(post, apiData, action, reason) {
     await browser.storage.local.set({ activityLog: newLog });
 }
 
-async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}) {
+async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, forceJsonOutput = true) {
     // Build the content types list based on enabled filters
     const contentTypes = [];
     const filterDescriptions = {
         unfunny: 'unfunny jokes, such as those that are cringe. Normal jokes are OK.',
-        politics: 'politics which criticise a political figure, or a political party, or simply mention a political figure. Note that public figures are not always political figures',
+        politics: 'politics which criticise a political figure, or a political party, or simply mention a political figure. Note that public figures unrelated to politics is not politics',
         ragebait: 'rage-bait',
         loweffort: 'low-effort content, this can mean a post that the writer of the post could have EASILY used google. If a hard google search would need to be used, it\'s not low effort. Some posts may ask a question that\'s more open ended which doesn\'t always make them low effort. low effort content can also be unrelated to asking questions,',
         advertisement: 'advertisement'
@@ -239,23 +239,29 @@ Body Text: ${post.body}
     // Append the chat completions endpoint
     apiUrl = `${apiUrl}/chat/completions`;
     
+    const requestBody = {
+        model: model,
+        messages: [
+            {
+                role: "user",
+                content: prompt
+            }
+        ],
+        temperature: 0.1
+    };
+
+    // Only add response_format if forceJsonOutput is enabled
+    if (forceJsonOutput) {
+        requestBody.response_format = { type: "json_object" };
+    }
+    
     const fetchOptions = {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
         },
-        body: JSON.stringify({
-            model: model,
-            messages: [
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.1
-        })
+        body: JSON.stringify(requestBody)
     };
 
     const response = await fetch(apiUrl, fetchOptions);
@@ -275,11 +281,71 @@ Body Text: ${post.body}
         throw new Error("Invalid response structure from OpenAI API.");
     }
 
-    // The API response is a stringified JSON, so it needs to be parsed.
-    const parsedResponse = JSON.parse(responseText);
+    let parsedResponse;
+    if (forceJsonOutput) {
+        // The API response is a stringified JSON, so it needs to be parsed.
+        try {
+            parsedResponse = JSON.parse(responseText);
+        } catch (error) {
+            console.error("Noise Filter: Failed to parse JSON response:", responseText);
+            throw new Error("Invalid JSON response from API.");
+        }
+    } else {
+        // For non-JSON responses, try to extract the information from plain text
+        try {
+            // Try to parse as JSON first, in case the model returns JSON anyway
+            parsedResponse = JSON.parse(responseText);
+        } catch {
+            // If not JSON, parse the plain text response
+            parsedResponse = parseNonJsonResponse(responseText);
+        }
+    }
+
     return {
         prompt,
         responseData,
         parsedResponse
+    };
+}
+
+function parseNonJsonResponse(responseText) {
+    // Simple text parsing for non-JSON responses
+    // Look for key phrases that indicate blocking
+    const lowerText = responseText.toLowerCase();
+    
+    // Check for explicit "safe" indication
+    if (lowerText.includes('safe') || lowerText.includes('not blocked') || lowerText.includes('allow')) {
+        return {
+            blocked_topic: "safe",
+            blocked_reason: "Post was deemed safe",
+            post_description: responseText.substring(0, 100) + "..."
+        };
+    }
+    
+    // Check for different content types
+    const contentTypes = ['politics', 'political', 'unfunny', 'cringe', 'rage', 'bait', 'low-effort', 'low effort', 'advertisement', 'ad', 'promote'];
+    
+    for (const type of contentTypes) {
+        if (lowerText.includes(type)) {
+            let topic = type;
+            if (type === 'political') topic = 'politics';
+            if (type === 'cringe') topic = 'unfunny';
+            if (type === 'rage' || type === 'bait') topic = 'ragebait';
+            if (type === 'low-effort' || type === 'low effort') topic = 'loweffort';
+            if (type === 'ad' || type === 'promote') topic = 'advertisement';
+            
+            return {
+                blocked_topic: topic,
+                blocked_reason: `Content appears to be ${type}`,
+                post_description: responseText.substring(0, 100) + "..."
+            };
+        }
+    }
+    
+    // Default to safe if no blocking indicators found
+    return {
+        blocked_topic: "safe",
+        blocked_reason: "No blocking indicators found in response",
+        post_description: responseText.substring(0, 100) + "..."
     };
 }

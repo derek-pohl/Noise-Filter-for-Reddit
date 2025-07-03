@@ -327,8 +327,8 @@ body {
 }
 
 .log-entry pre {
-    background: #1e293b;
-    color: #e2e8f0;
+    background: #f8f9fa;
+    color: #1e293b;
     padding: 12px;
     border-radius: 4px;
     font-size: 11px;
@@ -336,6 +336,7 @@ body {
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
+    border: 1px solid #e2e8f0;
 }
 
 .log-entry h4 {

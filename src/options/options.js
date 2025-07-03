@@ -95,9 +95,10 @@ function restoreOptions() {
         const whitelistedSubs = result.whitelistedSubs || [];
         whitelistedSubsInput.value = whitelistedSubs.join('\n');
         
-        // Restore filter states (default all content filters to enabled, circlejerk to enabled, extension enabled for first-time users)
+        // Restore filter states (default all content filters to enabled, circlejerk to enabled, extension enabled, json-output enabled for first-time users)
         const enabledFilters = result.enabledFilters || {
             'extension-enabled': true,
+            'json-output': true,
             unfunny: true,
             politics: true,
             ragebait: true,

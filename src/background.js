@@ -16,9 +16,9 @@ class RateLimiter {
         this.rateLimit = rateLimit || 60;
     }
 
-    async addToQueue(request) {
+    async addToQueue(request, tabId) {
         return new Promise((resolve, reject) => {
-            this.queue.push({ request, resolve, reject });
+            this.queue.push({ request, resolve, reject, tabId });
             this.processQueue();
         });
     }
@@ -55,6 +55,18 @@ class RateLimiter {
 
         this.processing = false;
     }
+
+    cancelByTabId(tabId) {
+        const remainingQueue = [];
+        for (const item of this.queue) {
+            if (item.tabId === tabId) {
+                item.reject(new Error(`Request cancelled for tab ${tabId} due to navigation.`));
+            } else {
+                remainingQueue.push(item);
+            }
+        }
+        this.queue = remainingQueue;
+    }
 }
 
 const rateLimiter = new RateLimiter();
@@ -62,6 +74,7 @@ const rateLimiter = new RateLimiter();
 browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "analyzePost") {
         const { post } = message;
+        const tabId = sender.tab.id;
 
         const { apiKey, baseUrl, model, enabledFilters, whitelistedSubs } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'enabledFilters', 'whitelistedSubs']);
         
@@ -115,18 +128,15 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             return;
         }
 
-        let apiResponse = null;
-        let actionTaken = 'safe';
-        let reason = 'Post was deemed safe.';
-
         try {
             // Add the API call to the rate-limited queue
             const apiResult = await rateLimiter.addToQueue(() => 
-                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output'])
+                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output']),
+                tabId
             );
             
             const { prompt, responseData, parsedResponse } = apiResult;
-            apiResponse = { prompt, responseData, parsedResponse };
+            const apiResponse = { prompt, responseData, parsedResponse };
 
             if (parsedResponse && parsedResponse.blocked_topic !== "safe") {
                 // Send a message back to the content script to update the post's UI
@@ -135,17 +145,27 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
                     postId: post.id,
                     reason: parsedResponse.blocked_reason,
                     topic: parsedResponse.blocked_topic
+                }).catch(err => {
+                    console.log(`Noise Filter: Could not send 'hidePost' message to tab ${sender.tab.id}. It may have been closed.`, err);
                 });
-                actionTaken = `hide (${parsedResponse.blocked_topic})`;
-                reason = parsedResponse.blocked_reason;
+                await logActivity(post, apiResponse, `hide (${parsedResponse.blocked_topic})`, parsedResponse.blocked_reason);
+            } else {
+                await logActivity(post, apiResponse, 'safe', 'Post was deemed safe.');
             }
         } catch (error) {
-            console.error("Noise Filter: Error analyzing post.", error);
-            actionTaken = 'error';
-            reason = error.message;
-            apiResponse = apiResponse || { error: error.message };
-        } finally {
-            await logActivity(post, apiResponse, actionTaken, reason);
+            const isCancellation = error.message.startsWith('Request cancelled');
+            const actionTaken = isCancellation ? 'cancelled' : 'error';
+            const reason = isCancellation ? 'Request cancelled due to navigation' : error.message;
+            
+            if (!isCancellation) {
+                console.error("Noise Filter: Error analyzing post.", error);
+            }
+            await logActivity(post, { error: error.message }, actionTaken, reason);
+        }
+    } else if (message.action === "tabUnloading") {
+        if (sender.tab && sender.tab.id) {
+            console.log(`Noise Filter: Tab ${sender.tab.id} is unloading. Clearing pending analysis requests.`);
+            rateLimiter.cancelByTabId(sender.tab.id);
         }
     }
 });

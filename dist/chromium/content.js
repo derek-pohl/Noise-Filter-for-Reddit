@@ -74,3 +74,13 @@ observer.observe(targetNode, config);
 
 // Initial run
 processPosts();
+
+// Notify background script when the page is unloading to cancel pending requests
+window.addEventListener('beforeunload', () => {
+    // Use try-catch as this can sometimes fail if the extension context is being invalidated.
+    try {
+        browser.runtime.sendMessage({ action: "tabUnloading" });
+    } catch (e) {
+        console.log("Noise Filter: Could not send unloading message, context likely invalidated.", e);
+    }
+});

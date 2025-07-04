@@ -3,39 +3,65 @@ const baseUrlInput = document.getElementById('baseUrl');
 const modelInput = document.getElementById('model');
 const rateLimitInput = document.getElementById('rateLimit');
 const whitelistedSubsInput = document.getElementById('whitelistedSubs');
-const saveButton0 = document.getElementById('saveButton0');
 const saveButton = document.getElementById('saveButton');
-const saveButton2 = document.getElementById('saveButton2');
-const saveButton3 = document.getElementById('saveButton3');
-const saveButton4 = document.getElementById('saveButton4');
-const statusEl0 = document.getElementById('status0');
 const statusEl = document.getElementById('status');
-const statusEl2 = document.getElementById('status2');
-const statusEl3 = document.getElementById('status3');
-const statusEl4 = document.getElementById('status4');
 const logContainer = document.getElementById('logContainer');
 const refreshLogButton = document.getElementById('refreshLogButton');
 const clearLogButton = document.getElementById('clearLogButton');
+const saveBar = document.getElementById('savebar');
 
-// Content filter elements
+// Tab and content filter elements
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabContents = document.querySelectorAll('.tab-content');
 const filterToggles = document.querySelectorAll('.toggle-switch');
-const filterOptions = document.querySelectorAll('.filter-option');
+
+// Initialize tab functionality
+tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const targetTab = button.dataset.tab;
+        
+        // Update tab buttons
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Update tab content
+        tabContents.forEach(content => content.classList.remove('active'));
+        document.getElementById(`${targetTab}-tab`).classList.add('active');
+        
+        // Hide save bar on activity log tab
+        if (targetTab === 'activity') {
+            saveBar.classList.remove('show');
+        }
+    });
+});
 
 // Initialize filter toggles
 filterToggles.forEach(toggle => {
     toggle.addEventListener('click', () => {
-        const filterId = toggle.dataset.toggle;
         const isEnabled = toggle.classList.contains('enabled');
-        const filterOption = document.querySelector(`.filter-option[data-filter="${filterId}"]`);
         
         if (isEnabled) {
             toggle.classList.remove('enabled');
-            filterOption.classList.remove('enabled');
         } else {
             toggle.classList.add('enabled');
-            filterOption.classList.add('enabled');
+        }
+        
+        // Show save bar when changes are made
+        if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
+            saveBar.classList.add('show');
         }
     });
+});
+
+// Show save bar when form inputs change
+[apiKeyInput, baseUrlInput, modelInput, rateLimitInput, whitelistedSubsInput].forEach(input => {
+    if (input) {
+        input.addEventListener('input', () => {
+            if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
+                saveBar.classList.add('show');
+            }
+        });
+    }
 });
 
 function saveOptions() {
@@ -50,7 +76,7 @@ function saveOptions() {
         .map(sub => sub.trim().toLowerCase())
         .filter(sub => sub.length > 0);
     
-    // Get enabled filters (including extension enabled state)
+    // Get enabled filters
     const enabledFilters = {};
     filterToggles.forEach(toggle => {
         const filterId = toggle.dataset.toggle;
@@ -59,38 +85,32 @@ function saveOptions() {
     
     // Validate required fields
     if (!apiKey || !baseUrl || !model) {
-        if (statusEl0) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl0);
-        showStatus('API Key, Base URL, and Model are required!', 'error', statusEl);
-        if (statusEl2) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl2);
-        if (statusEl3) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl3);
-        if (statusEl4) showStatus('API Key, Base URL, and Model are required!', 'error', statusEl4);
+        showStatus('API Key, Base URL, and Model are required!', 'error');
         return;
     }
     
     // Validate rate limit
     if (rateLimit < 1 || rateLimit > 600) {
-        if (statusEl0) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl0);
-        showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl);
-        if (statusEl2) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl2);
-        if (statusEl3) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl3);
-        if (statusEl4) showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error', statusEl4);
+        showStatus('Rate limit must be between 1 and 600 requests per minute!', 'error');
         return;
     }
     
     browser.storage.sync.set({ apiKey, baseUrl, model, rateLimit, enabledFilters, whitelistedSubs }).then(() => {
-        if (statusEl0) showStatus('Settings saved successfully!', 'success', statusEl0);
-        showStatus('Settings saved successfully!', 'success', statusEl);
-        if (statusEl2) showStatus('Settings saved successfully!', 'success', statusEl2);
-        if (statusEl3) showStatus('Settings saved successfully!', 'success', statusEl3);
-        if (statusEl4) showStatus('Settings saved successfully!', 'success', statusEl4);
+        showStatus('Settings saved successfully!', 'success');
+        // Hide save bar after successful save
+        setTimeout(() => {
+            saveBar.classList.remove('show');
+        }, 2000);
+    }).catch(error => {
+        showStatus('Failed to save settings: ' + error.message, 'error');
     });
 }
 
-function showStatus(message, type, statusElement = statusEl) {
-    statusElement.textContent = message;
-    statusElement.className = `status-message show ${type}`;
+function showStatus(message, type) {
+    statusEl.textContent = message;
+    statusEl.className = `status-message show ${type}`;
     setTimeout(() => {
-        statusElement.className = 'status-message';
+        statusEl.className = 'status-message';
     }, 3000);
 }
 
@@ -123,14 +143,11 @@ function restoreOptions() {
         
         filterToggles.forEach(toggle => {
             const filterId = toggle.dataset.toggle;
-            const filterOption = document.querySelector(`.filter-option[data-filter="${filterId}"]`);
             
             if (enabledFilters[filterId]) {
                 toggle.classList.add('enabled');
-                filterOption.classList.add('enabled');
             } else {
                 toggle.classList.remove('enabled');
-                filterOption.classList.remove('enabled');
             }
         });
     });
@@ -138,35 +155,40 @@ function restoreOptions() {
 
 async function renderLogs() {
     logContainer.innerHTML = 'Loading...';
-    const { activityLog = [] } = await browser.storage.local.get('activityLog');
+    
+    try {
+        const { activityLog = [] } = await browser.storage.local.get('activityLog');
 
-    if (activityLog.length === 0) {
-        logContainer.innerHTML = 'No activity recorded yet.';
-        return;
-    }
+        if (activityLog.length === 0) {
+            logContainer.innerHTML = 'No activity recorded yet.';
+            return;
+        }
 
-    logContainer.innerHTML = ''; // Clear previous logs
+        logContainer.innerHTML = ''; // Clear previous logs
 
-    for (const entry of activityLog) {
-        const entryDiv = document.createElement('div');
-        entryDiv.className = 'log-entry';
+        for (const entry of activityLog) {
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'log-entry';
 
-        const timestamp = new Date(entry.timestamp).toLocaleString();
+            const timestamp = new Date(entry.timestamp).toLocaleString();
 
-        entryDiv.innerHTML = `
-            <p><strong>Timestamp:</strong> ${timestamp}</p>
-            <p><strong>Post:</strong> "${entry.post.title}" in ${entry.post.subreddit}</p>
-            <p><strong>Action:</strong> ${entry.action}</p>
-            <p><strong>Reason:</strong> ${entry.reason}</p>
-            <details>
-                <summary>View API Request & Response</summary>
-                <h4>Request Prompt:</h4>
-                <pre>${escapeHtml(entry.apiData?.prompt || 'N/A')}</pre>
-                <h4>Full API Response:</h4>
-                <pre>${escapeHtml(JSON.stringify(entry.apiData?.responseData || {note: "No response data"}, null, 2))}</pre>
-            </details>
-        `;
-        logContainer.appendChild(entryDiv);
+            entryDiv.innerHTML = `
+                <p><strong>Timestamp:</strong> ${timestamp}</p>
+                <p><strong>Post:</strong> "${escapeHtml(entry.post.title)}" in ${escapeHtml(entry.post.subreddit)}</p>
+                <p><strong>Action:</strong> ${escapeHtml(entry.action)}</p>
+                <p><strong>Reason:</strong> ${escapeHtml(entry.reason)}</p>
+                <details>
+                    <summary>View API Request & Response</summary>
+                    <h4>Request Prompt:</h4>
+                    <pre>${escapeHtml(entry.apiData?.prompt || 'N/A')}</pre>
+                    <h4>Full API Response:</h4>
+                    <pre>${escapeHtml(JSON.stringify(entry.apiData?.responseData || {note: "No response data"}, null, 2))}</pre>
+                </details>
+            `;
+            logContainer.appendChild(entryDiv);
+        }
+    } catch (error) {
+        logContainer.innerHTML = `Error loading logs: ${escapeHtml(error.message)}`;
     }
 }
 
@@ -175,20 +197,26 @@ function clearLogs() {
         browser.storage.local.remove('activityLog').then(() => {
             renderLogs();
             showStatus('Activity logs cleared!', 'success');
+        }).catch(error => {
+            showStatus('Failed to clear logs: ' + error.message, 'error');
         });
     }
 }
 
 function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        return String(unsafe);
+    }
     return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
-document.addEventListener('DOMContentLoaded', renderLogs);
-if (saveButton0) saveButton0.addEventListener('click', saveOptions);
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    restoreOptions();
+    renderLogs();
+});
+
+// Event listeners
 saveButton.addEventListener('click', saveOptions);
-if (saveButton2) saveButton2.addEventListener('click', saveOptions);
-if (saveButton3) saveButton3.addEventListener('click', saveOptions);
-if (saveButton4) saveButton4.addEventListener('click', saveOptions);
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);

@@ -29,43 +29,47 @@ class RateLimiter {
         }
 
         this.processing = true;
-        await this.updateRateLimit();
+        try {
+            await this.updateRateLimit();
 
-        while (this.queue.length > 0) {
-            const { request, resolve, reject } = this.queue.shift();
-            
-            try {
-                // Calculate delay needed to maintain rate limit (requests per minute)
-                const now = Date.now();
-                const timeSinceLastRequest = now - this.lastRequestTime;
-                const minInterval = 60000 / this.rateLimit; // milliseconds between requests (60000ms = 1 minute)
-                const delay = Math.max(0, minInterval - timeSinceLastRequest);
+            while (this.queue.length > 0) {
+                const { request, resolve, reject } = this.queue.shift();
+                
+                try {
+                    // Calculate delay needed to maintain rate limit (requests per minute)
+                    const now = Date.now();
+                    const timeSinceLastRequest = now - this.lastRequestTime;
+                    const minInterval = 60000 / this.rateLimit; // milliseconds between requests (60000ms = 1 minute)
+                    const delay = Math.max(0, minInterval - timeSinceLastRequest);
 
-                if (delay > 0) {
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    if (delay > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+
+                    this.lastRequestTime = Date.now();
+                    const result = await request();
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
                 }
-
-                this.lastRequestTime = Date.now();
-                const result = await request();
-                resolve(result);
-            } catch (error) {
-                reject(error);
             }
+        } catch (error) {
+            console.error("Noise Filter: Error processing queue. Rejecting remaining items.", error);
+            this.queue.forEach(item => item.reject(error));
+            this.queue = [];
+        } finally {
+            this.processing = false;
         }
-
-        this.processing = false;
     }
 
     cancelByTabId(tabId) {
-        const remainingQueue = [];
-        for (const item of this.queue) {
+        this.queue = this.queue.filter(item => {
             if (item.tabId === tabId) {
                 item.reject(new Error(`Request cancelled for tab ${tabId} due to navigation.`));
-            } else {
-                remainingQueue.push(item);
+                return false; // Remove from queue
             }
-        }
-        this.queue = remainingQueue;
+            return true; // Keep in queue
+        });
     }
 }
 

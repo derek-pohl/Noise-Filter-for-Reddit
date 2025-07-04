@@ -8,232 +8,250 @@
 </head>
 <body>
     <div class="header">
-        <div class="header-icon">🔇</div>
-        <h1>Noise Filter for Reddit</h1>
-        <p class="subtitle">Configure your AI-powered content filtering</p>
-    </div>
-    
-    <div class="container">
-        <div class="card">
-            <h2>Extension Status</h2>
-            
-            <div class="filter-option" data-filter="extension-enabled">
-                <div class="toggle-switch enabled" data-toggle="extension-enabled"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Enable Noise Filter</div>
-                    <div class="filter-description">Turn the extension on or off. When disabled, no posts will be analyzed or filtered.</div>
+        <div class="header-content">
+            <div class="header-left">
+                <div class="header-icon">🔇</div>
+                <div class="header-text">
+                    <h1>Noise Filter for Reddit</h1>
+                    <span class="version">v1.0</span>
                 </div>
             </div>
-
-            <div class="button-group">
-                <button id="saveButton0" class="btn-primary">
-                    Save Settings
-                </button>
-            </div>
-            <div id="status0" class="status-message"></div>
         </div>
-        
-        <div class="card">
-            <h2>API Configuration</h2>
-            
-            <div class="form-group">
-                <label for="apiKey">API Key</label>
-                <div class="input-wrapper">
-                    <input type="password" id="apiKey" placeholder="Enter your API key">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="baseUrl">Base URL</label>
-                <div class="input-wrapper">
-                    <input type="text" id="baseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
-                </div>
-                <div class="help-text">
-                    <div class="help-item"><strong>OpenAI:</strong> https://api.openai.com/v1</div>
-                    <div class="help-item"><strong>Gemini via OpenAI:</strong> https://generativelanguage.googleapis.com/v1beta/openai</div>
-                    <div class="help-item"><strong>Local servers:</strong> http://localhost:1234/v1</div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="model">Model</label>
-                <div class="input-wrapper">
-                    <input type="text" id="model" placeholder="gemma-3-27b-it">
-                </div>
-                <div class="help-text">
-                    Examples: gemma-3-27b-it, gpt-4o-mini, gemini-2.0-flash-lite
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="rateLimit">Rate Limit (requests per minute)</label>
-                <div class="input-wrapper">
-                    <input type="number" id="rateLimit" placeholder="60" min="1" max="600" step="1">
-                </div>
-                <div class="help-text">
-                    Maximum number of API requests per minute (1-600). Lower values reduce API costs but may delay filtering.
-                </div>
-            </div>
-            
-            <div class="filter-option" data-filter="json-output">
-                <div class="toggle-switch enabled" data-toggle="json-output"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Force JSON Output</div>
-                    <div class="filter-description">Enable if your LLM service supports JSON output mode. Disable for services that don't support structured output (e.g., some local models).</div>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button id="saveButton" class="btn-primary">
-                    Save Settings
-                </button>
-            </div>
-            
+    </div>
+
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="settings">Settings</button>
+            <button class="tab-button" data-tab="activity">Activity Log</button>
+        </div>
+    </div>
+
+    <div class="sticky-save-bar" id="savebar">
+        <div class="save-content">
+            <button id="saveButton" class="btn-save">Save changes</button>
             <div id="status" class="status-message"></div>
         </div>
+    </div>
 
-        <div class="card">
-            <h2>Content Filtering Options</h2>
-            <p class="help-text" style="margin-bottom: 16px;">Choose which types of content you want to filter out. Only enabled filters will be used to analyze posts.</p>
-            
-            <div class="content-filters">
-                <div class="filter-option" data-filter="unfunny">
-                    <div class="toggle-switch" data-toggle="unfunny"></div>
-                    <div class="filter-content">
-                        <div class="filter-title">Unfunny Jokes</div>
-                        <div class="filter-description">Block cringe-worthy or unfunny humor. Normal, genuinely funny jokes will still be allowed.</div>
+    <div class="content-wrapper">
+        <!-- Settings Tab -->
+        <div class="tab-content active" id="settings-tab">
+            <div class="settings-container">
+                <!-- Extension Status -->
+                <section class="settings-section">
+                    <h2>Extension Status</h2>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Enable Noise Filter</label>
+                            <div class="setting-description">Turn the extension on or off. When disabled, no posts will be analyzed or filtered.</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="extension-enabled"></div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="filter-option" data-filter="politics">
-                    <div class="toggle-switch" data-toggle="politics"></div>
-                    <div class="filter-content">
-                        <div class="filter-title">Political Content</div>
-                        <div class="filter-description">Block posts that criticize political figures, parties, or mention politicians.</div>
+                </section>
+
+                <!-- API Configuration -->
+                <section class="settings-section">
+                    <h2>API Configuration</h2>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label for="apiKey">API Key</label>
+                            <div class="setting-description">Your AI service API key</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="password" id="apiKey" placeholder="Enter your API key">
+                        </div>
                     </div>
-                </div>
-                
-                <div class="filter-option" data-filter="ragebait">
-                    <div class="toggle-switch" data-toggle="ragebait"></div>
-                    <div class="filter-content">
-                        <div class="filter-title">Rage Bait</div>
-                        <div class="filter-description">Block content designed to provoke anger or strong emotional reactions for engagement.</div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label for="baseUrl">Base URL</label>
+                            <div class="setting-description">
+                                API endpoint URL<br>
+                                <small><strong>OpenAI:</strong> https://api.openai.com/v1<br>
+                                <strong>Gemini:</strong> https://generativelanguage.googleapis.com/v1beta/openai<br>
+                                <strong>Local:</strong> http://localhost:1234/v1</small>
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="baseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta/openai">
+                        </div>
                     </div>
-                </div>
-                
-                <div class="filter-option" data-filter="loweffort">
-                    <div class="toggle-switch" data-toggle="loweffort"></div>
-                    <div class="filter-content">
-                        <div class="filter-title">Low-Effort Content</div>
-                        <div class="filter-description">Block posts with questions that could be easily answered with a simple Google search.</div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label for="model">Model</label>
+                            <div class="setting-description">AI model to use (e.g., gemma-3-27b-it, gpt-4o-mini)</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="model" placeholder="gemma-3-27b-it">
+                        </div>
                     </div>
-                </div>
-                
-                <div class="filter-option" data-filter="advertisement">
-                    <div class="toggle-switch" data-toggle="advertisement"></div>
-                    <div class="filter-content">
-                        <div class="filter-title">Advertisements</div>
-                        <div class="filter-description">Block content which may be promoting a service. This does NOT block ads on reddit, only user made posts.</div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label for="rateLimit">Rate Limit</label>
+                            <div class="setting-description">Maximum API requests per minute (1-600)</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="rateLimit" placeholder="60" min="1" max="600" step="1">
+                        </div>
                     </div>
-                </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Force JSON Output</label>
+                            <div class="setting-description">Enable for services that support structured JSON output</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="json-output"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Content Filtering -->
+                <section class="settings-section">
+                    <h2>Content Filtering</h2>
+                    <div class="section-description">Choose which types of content to filter. Only enabled filters will be used to analyze posts.</div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Unfunny Jokes</label>
+                            <div class="setting-description">Block cringe-worthy or unfunny humor</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" data-toggle="unfunny"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Political Content</label>
+                            <div class="setting-description">Block posts about political figures or parties</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" data-toggle="politics"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Rage Bait</label>
+                            <div class="setting-description">Block content designed to provoke anger</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" data-toggle="ragebait"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Low-Effort Content</label>
+                            <div class="setting-description">Block easily Google-able questions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" data-toggle="loweffort"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Advertisements</label>
+                            <div class="setting-description">Block promotional user posts (not Reddit ads)</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch" data-toggle="advertisement"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Page Filtering -->
+                <section class="settings-section">
+                    <h2>Page Filtering</h2>
+                    <div class="section-description">Configure which Reddit pages the extension should work on.</div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Reddit Home Page</label>
+                            <div class="setting-description">Filter on reddit.com home feed</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="home-page"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Popular Page</label>
+                            <div class="setting-description">Filter on r/popular</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="popular-page"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>All Page</label>
+                            <div class="setting-description">Filter on r/all</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="all-page"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Individual Subreddits</label>
+                            <div class="setting-description">Filter when browsing specific subreddits</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="subreddit-page"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Subreddit Exceptions -->
+                <section class="settings-section">
+                    <h2>Subreddit Exceptions</h2>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label for="whitelistedSubs">Whitelisted Subreddits</label>
+                            <div class="setting-description">Subreddits to exclude from filtering (one per line, without r/ prefix)</div>
+                        </div>
+                        <div class="setting-control">
+                            <textarea id="whitelistedSubs" placeholder="AskReddit&#10;explainlikeimfive&#10;nostupidquestions" rows="4"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Filter Circlejerk Subreddits</label>
+                            <div class="setting-description">When disabled, "circlejerk" subreddits are automatically whitelisted</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="toggle-switch enabled" data-toggle="circlejerk"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
-            
-            <div class="button-group">
-                <button id="saveButton3" class="btn-primary">
-                    Save Settings
-                </button>
-            </div>
-            
-            <div id="status3" class="status-message"></div>
         </div>
 
-        <div class="card">
-            <h2>Page Filtering</h2>
-            <p class="help-text" style="margin-bottom: 16px;">Configure which Reddit pages the extension should work on. The extension is automatically disabled on individual post pages.</p>
-            
-            <div class="filter-option" data-filter="home-page">
-                <div class="toggle-switch enabled" data-toggle="home-page"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Reddit Home Page</div>
-                    <div class="filter-description">Enable filtering on https://www.reddit.com/ and https://www.reddit.com/?feed=home</div>
+        <!-- Activity Log Tab -->
+        <div class="tab-content" id="activity-tab">
+            <div class="activity-container">
+                <div class="activity-header">
+                    <h2>Activity Log</h2>
+                    <div class="activity-controls">
+                        <button id="refreshLogButton" class="btn-secondary">Refresh</button>
+                        <button id="clearLogButton" class="btn-danger">Clear Log</button>
+                    </div>
                 </div>
+                <div id="logContainer" class="log-container"></div>
             </div>
-            
-            <div class="filter-option" data-filter="popular-page">
-                <div class="toggle-switch enabled" data-toggle="popular-page"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Popular Page</div>
-                    <div class="filter-description">Enable filtering on https://www.reddit.com/r/popular/</div>
-                </div>
-            </div>
-            
-            <div class="filter-option" data-filter="all-page">
-                <div class="toggle-switch enabled" data-toggle="all-page"></div>
-                <div class="filter-content">
-                    <div class="filter-title">All Page</div>
-                    <div class="filter-description">Enable filtering on https://www.reddit.com/r/all/</div>
-                </div>
-            </div>
-            
-            <div class="filter-option" data-filter="subreddit-page">
-                <div class="toggle-switch enabled" data-toggle="subreddit-page"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Individual Subreddits</div>
-                    <div class="filter-description">Enable filtering when browsing specific subreddits (e.g., https://www.reddit.com/r/AITAH/)</div>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button id="saveButton4" class="btn-primary">
-                    Save Settings
-                </button>
-            </div>
-            
-            <div id="status4" class="status-message"></div>
-        </div>
-
-        <div class="card">
-            <h2>Subreddit Exceptions</h2>
-            <p class="help-text" style="margin-bottom: 16px;">Configure which subreddits should be excluded from filtering.</p>
-            
-            <div class="form-group">
-                <label for="whitelistedSubs">Whitelisted Subreddits</label>
-                <div class="input-wrapper">
-                    <textarea id="whitelistedSubs" placeholder="Enter subreddit names, one per line (without r/ prefix)&#10;Example:&#10;AskReddit&#10;explainlikeimfive&#10;nostupidquestions" rows="4"></textarea>
-                </div>
-                <div class="help-text">
-                    Enter subreddit names without the "r/" prefix, one per line. Posts from these subreddits will never be filtered.
-                </div>
-            </div>
-            
-            <div class="filter-option" data-filter="circlejerk">
-                <div class="toggle-switch enabled" data-toggle="circlejerk"></div>
-                <div class="filter-content">
-                    <div class="filter-title">Filter Circlejerk Subreddits</div>
-                    <div class="filter-description">When enabled, subreddits with "circlejerk" in the name will be filtered. When disabled, these subreddits are automatically whitelisted since they're meant to be satirical.</div>
-                </div>
-            </div>
-            
-            <div class="button-group">
-                <button id="saveButton2" class="btn-primary">
-                    Save Settings
-                </button>
-            </div>
-            
-            <div id="status2" class="status-message"></div>
-        </div>
-
-        <div class="card">
-            <h2>Activity Log</h2>
-            <div class="log-controls">
-                <button id="refreshLogButton" class="btn-secondary">
-                    Refresh
-                </button>
-                <button id="clearLogButton" class="btn-danger">
-                    Clear Log
-                </button>
-            </div>
-            <div id="logContainer" class="log-container"></div>
         </div>
     </div>
     

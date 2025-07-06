@@ -77,7 +77,7 @@ const rateLimiter = new RateLimiter();
 
 browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "analyzePost") {
-        const { post } = message;
+        const { post, scoreFilterMode, scoreThreshold } = message;
         const tabId = sender.tab.id;
 
         const { apiKey, baseUrl, model, enabledFilters, whitelistedSubs } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'enabledFilters', 'whitelistedSubs']);
@@ -91,6 +91,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             ragebait: false,
             loweffort: false,
             advertisement: false,
+            // Conditional filters for low-scoring posts
+            'conditional-unfunny': false,
+            'conditional-ragebait': false,
+            'conditional-loweffort': false,
+            'conditional-advertisement': false,
             circlejerk: false
         };
         const activeFilters = { ...defaultFilters, ...enabledFilters };
@@ -136,7 +141,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         try {
             // Add the API call to the rate-limited queue
             const apiResult = await rateLimiter.addToQueue(() => 
-                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output']),
+                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output'], scoreFilterMode, scoreThreshold),
                 tabId
             );
             
@@ -190,8 +195,8 @@ async function logActivity(post, apiData, action, reason) {
     await browser.storage.local.set({ activityLog: newLog });
 }
 
-async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, forceJsonOutput = true) {
-    // Build the content types list based on enabled filters
+async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, forceJsonOutput = true, scoreFilterMode = 'conditional', scoreThreshold = 1) {
+    // Build the content types list based on enabled filters and score-based filtering mode
     const contentTypes = [];
     const filterDescriptions = {
         unfunny: 'unfunny jokes, such as those that are cringe. Normal jokes are OK.',
@@ -201,25 +206,59 @@ async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, 
         advertisement: 'advertisement'
     };
 
-    // Default to all filters enabled if no preferences are set
+    // Default filters configuration for score-based filtering
     const defaultFilters = {
         'extension-enabled': true,
+        // Always check filters (regardless of score)
         unfunny: false,
         politics: false,
         ragebait: false,
         loweffort: false,
-        advertisement: false
+        advertisement: false,
+        // Conditional filters (only for low-scoring posts)
+        'conditional-unfunny': false,
+        'conditional-ragebait': false,
+        'conditional-loweffort': false,
+        'conditional-advertisement': false
     };
 
     const activeFilters = { ...defaultFilters, ...enabledFilters };
     const activeTags = [];
+    const postScore = post.score || 0;
 
-    Object.keys(filterDescriptions).forEach(key => {
-        if (activeFilters[key]) {
-            contentTypes.push(filterDescriptions[key]);
-            activeTags.push(key);
+    // Determine which filters to apply based on score-based filtering mode
+    if (scoreFilterMode === 'all') {
+        // Mode 1: Check all posts regardless of score - use always-check filters
+        Object.keys(filterDescriptions).forEach(key => {
+            if (activeFilters[key]) {
+                contentTypes.push(filterDescriptions[key]);
+                activeTags.push(key);
+            }
+        });
+    } else if (scoreFilterMode === 'conditional') {
+        // Mode 2: Apply different filters based on post score
+        if (postScore <= scoreThreshold) {
+            // For low-scoring posts, use conditional filters
+            Object.keys(filterDescriptions).forEach(key => {
+                const conditionalKey = `conditional-${key}`;
+                if (activeFilters[conditionalKey]) {
+                    contentTypes.push(filterDescriptions[key]);
+                    activeTags.push(key);
+                }
+            });
         }
-    });
+        
+        // Always apply the "always check" filters regardless of score
+        Object.keys(filterDescriptions).forEach(key => {
+            if (activeFilters[key]) {
+                // Avoid duplicates
+                if (!activeTags.includes(key)) {
+                    contentTypes.push(filterDescriptions[key]);
+                    activeTags.push(key);
+                }
+            }
+        });
+    }
 
     // If no filters are enabled, don't block anything
     if (contentTypes.length === 0) {
@@ -249,6 +288,7 @@ Based on this and the post at the top, respond ONLY in JSON format, such as in t
 }
 
 Sub Name: ${post.subreddit}
+Post Score: ${postScore} upvotes
 Post:
 
 Title: ${post.title}

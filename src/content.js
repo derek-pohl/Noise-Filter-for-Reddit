@@ -79,13 +79,15 @@ function getPostData(postElement) {
             id: `noise-filter-post-${postCounter++}`,
             title: "Promoted Post",
             body: postElement.innerText.substring(0, 500), // Get some text for context
-            subreddit: "r/advertisement"
+            subreddit: "r/advertisement",
+            score: 0 // Promoted posts default to 0 score
         };
     }
 
     // Extract data directly from the shreddit-post element's attributes for reliability.
     const title = postElement.getAttribute('post-title');
     const subreddit = postElement.getAttribute('subreddit-name');
+    const score = parseInt(postElement.getAttribute('score')) || 0;
 
     if (!title || !subreddit) {
         return null; // Not a valid post container
@@ -98,7 +100,8 @@ function getPostData(postElement) {
         id: `noise-filter-post-${postCounter++}`,
         title: title,
         body: bodyElement ? bodyElement.innerText : "",
-        subreddit: `r/${subreddit}`
+        subreddit: `r/${subreddit}`,
+        score: score
     };
 }
 
@@ -107,6 +110,11 @@ async function processPosts() {
     if (!(await shouldFilterOnCurrentPage())) {
         return;
     }
+    
+    // Get score-based filtering settings
+    const result = await browser.storage.sync.get(['scoreFilterMode', 'scoreThreshold']);
+    const scoreFilterMode = result.scoreFilterMode || 'conditional';
+    const scoreThreshold = result.scoreThreshold || 1;
     
     // This selector targets individual post containers in Reddit's feed.
     // Reddit has updated its structure to use the <shreddit-post> custom element,
@@ -119,8 +127,23 @@ async function processPosts() {
         const postData = getPostData(container);
         if (postData) {
             container.setAttribute('id', postData.id); // Assign the unique ID to the element
-            // Send to the background script for analysis
-            browser.runtime.sendMessage({ action: "analyzePost", post: postData });
+            
+            // Apply score-based filtering logic
+            if (scoreFilterMode === 'hide' && postData.score <= scoreThreshold) {
+                // Mode 3: Hide posts at or below threshold without AI checking
+                console.log(`Noise Filter: Hiding post with score ${postData.score} (threshold: ${scoreThreshold})`);
+                container.remove();
+                continue;
+            }
+            
+            // For modes 'all' and 'conditional', send to background script for analysis
+            // The background script will handle which filters to apply based on the mode and score
+            browser.runtime.sendMessage({ 
+                action: "analyzePost", 
+                post: postData,
+                scoreFilterMode: scoreFilterMode,
+                scoreThreshold: scoreThreshold
+            });
         }
     }
 }

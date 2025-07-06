@@ -471,6 +471,71 @@ body {
     background: #aaa;
 }
 
+/* Score-based filtering specific styles */
+.score-threshold-setting {
+    margin-top: 12px;
+}
+
+.conditional-filters-section,
+.always-check-section {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.conditional-filters-section h3,
+.always-check-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.conditional-filters-section .section-description,
+.always-check-section .section-description {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.conditional-filters-section .setting-row,
+.always-check-section .setting-row {
+    margin-bottom: 12px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+}
+
+.conditional-filters-section .setting-row:last-child,
+.always-check-section .setting-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Hide conditional filters when not in conditional mode */
+.conditional-filters-section.hidden {
+    display: none;
+}
+
+/* Select dropdown styling */
+select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #007cba;
+    box-shadow: 0 0 0 2px rgba(0, 124, 186, 0.2);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-content {

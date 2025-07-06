@@ -3,12 +3,15 @@ const baseUrlInput = document.getElementById('baseUrl');
 const modelInput = document.getElementById('model');
 const rateLimitInput = document.getElementById('rateLimit');
 const whitelistedSubsInput = document.getElementById('whitelistedSubs');
+const scoreFilterModeSelect = document.getElementById('scoreFilterMode');
+const scoreThresholdInput = document.getElementById('scoreThreshold');
 const saveButton = document.getElementById('saveButton');
 const statusEl = document.getElementById('status');
 const logContainer = document.getElementById('logContainer');
 const refreshLogButton = document.getElementById('refreshLogButton');
 const clearLogButton = document.getElementById('clearLogButton');
 const saveBar = document.getElementById('savebar');
+const conditionalFiltersSection = document.getElementById('conditionalFiltersSection');
 
 // Tab and content filter elements
 const tabButtons = document.querySelectorAll('.tab-button');
@@ -53,8 +56,34 @@ filterToggles.forEach(toggle => {
     });
 });
 
+// Initialize score filter mode handling
+function updateScoreFilterUI() {
+    const mode = scoreFilterModeSelect.value;
+    
+    if (mode === 'conditional') {
+        conditionalFiltersSection.classList.remove('hidden');
+        // Set appropriate threshold suggestion for conditional mode
+        if (scoreThresholdInput.value === '0') {
+            scoreThresholdInput.value = '1';
+        }
+    } else {
+        conditionalFiltersSection.classList.add('hidden');
+        // Set appropriate threshold suggestion for hide mode
+        if (mode === 'hide' && scoreThresholdInput.value === '1') {
+            scoreThresholdInput.value = '0';
+        }
+    }
+}
+
+scoreFilterModeSelect.addEventListener('change', () => {
+    updateScoreFilterUI();
+    if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
+        saveBar.classList.add('show');
+    }
+});
+
 // Show save bar when form inputs change
-[apiKeyInput, baseUrlInput, modelInput, rateLimitInput, whitelistedSubsInput].forEach(input => {
+[apiKeyInput, baseUrlInput, modelInput, rateLimitInput, whitelistedSubsInput, scoreThresholdInput].forEach(input => {
     if (input) {
         input.addEventListener('input', () => {
             if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
@@ -69,6 +98,8 @@ function saveOptions() {
     const baseUrl = baseUrlInput.value;
     const model = modelInput.value;
     const rateLimit = parseInt(rateLimitInput.value) || 60;
+    const scoreFilterMode = scoreFilterModeSelect.value;
+    const scoreThreshold = parseInt(scoreThresholdInput.value) || 1;
     
     // Get whitelisted subreddits
     const whitelistedSubs = whitelistedSubsInput.value
@@ -95,7 +126,22 @@ function saveOptions() {
         return;
     }
     
-    browser.storage.sync.set({ apiKey, baseUrl, model, rateLimit, enabledFilters, whitelistedSubs }).then(() => {
+    // Validate score threshold
+    if (scoreThreshold < -100 || scoreThreshold > 100) {
+        showStatus('Score threshold must be between -100 and 100!', 'error');
+        return;
+    }
+    
+    browser.storage.sync.set({ 
+        apiKey, 
+        baseUrl, 
+        model, 
+        rateLimit, 
+        enabledFilters, 
+        whitelistedSubs,
+        scoreFilterMode,
+        scoreThreshold
+    }).then(() => {
         showStatus('Settings saved successfully!', 'success');
         // Hide save bar after successful save
         setTimeout(() => {
@@ -115,25 +161,47 @@ function showStatus(message, type) {
 }
 
 function restoreOptions() {
-    browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'rateLimit', 'enabledFilters', 'whitelistedSubs']).then((result) => {
+    browser.storage.sync.get([
+        'apiKey', 
+        'baseUrl', 
+        'model', 
+        'rateLimit', 
+        'enabledFilters', 
+        'whitelistedSubs',
+        'scoreFilterMode',
+        'scoreThreshold'
+    ]).then((result) => {
         apiKeyInput.value = result.apiKey || '';
         baseUrlInput.value = result.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
         modelInput.value = result.model || 'gemma-3-27b-it';
         rateLimitInput.value = result.rateLimit || 30;
+        scoreFilterModeSelect.value = result.scoreFilterMode || 'conditional';
+        
+        // Set default threshold based on mode if not previously set
+        const defaultThreshold = (result.scoreFilterMode || 'conditional') === 'hide' ? 0 : 1;
+        scoreThresholdInput.value = result.scoreThreshold !== undefined ? result.scoreThreshold : defaultThreshold;
         
         // Restore whitelisted subreddits
         const whitelistedSubs = result.whitelistedSubs || [];
         whitelistedSubsInput.value = whitelistedSubs.join('\n');
         
-        // Restore filter states (default all content filters to enabled, circlejerk to enabled, extension enabled, json-output enabled for first-time users)
+        // Restore filter states with new defaults for score-based filtering
         const enabledFilters = result.enabledFilters || {
             'extension-enabled': true,
             'json-output': false,
-            unfunny: false,
+            // Always check filters (regardless of score)
             politics: false,
+            unfunny: false,
             ragebait: false,
             loweffort: false,
             advertisement: false,
+            // Conditional filters (only for low-scoring posts)
+            'conditional-politics': false,
+            'conditional-unfunny': false,
+            'conditional-ragebait': false,
+            'conditional-loweffort': false,
+            'conditional-advertisement': false,
+            // Page settings
             circlejerk: false,
             'home-page': true,
             'popular-page': true,
@@ -150,6 +218,9 @@ function restoreOptions() {
                 toggle.classList.remove('enabled');
             }
         });
+        
+        // Update UI based on score filter mode
+        updateScoreFilterUI();
     });
 }
 
@@ -214,6 +285,7 @@ function escapeHtml(unsafe) {
 document.addEventListener('DOMContentLoaded', () => {
     restoreOptions();
     renderLogs();
+    updateScoreFilterUI();
 });
 
 // Event listeners

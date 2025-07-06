@@ -111,58 +111,134 @@
                     </div>
                 </section>
 
-                <!-- Content Filtering -->
+                <!-- Score-Based Filtering -->
                 <section class="settings-section">
-                    <h2>Content Filtering</h2>
-                    <div class="section-description">Choose which types of content to filter. Only enabled filters will be used to analyze posts.</div>
+                    <h2>Score-Based Filtering</h2>
+                    <div class="section-description">Configure how posts are filtered based on their score (upvotes minus downvotes).</div>
                     
                     <div class="setting-row">
                         <div class="setting-info">
-                            <label>Unfunny Jokes</label>
-                            <div class="setting-description">Block cringe-worthy or unfunny humor</div>
+                            <label>Filtering Mode</label>
+                            <div class="setting-description">Choose how to filter posts based on their score</div>
                         </div>
                         <div class="setting-control">
-                            <div class="toggle-switch" data-toggle="unfunny"></div>
+                            <select id="scoreFilterMode">
+                                <option value="all">Check all posts regardless of score</option>
+                                <option value="conditional" selected>Check low-scoring posts for specific content</option>
+                                <option value="hide">Hide posts below threshold without checking</option>
+                            </select>
                         </div>
                     </div>
                     
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <label>Political Content</label>
-                            <div class="setting-description">Block posts about political figures or parties</div>
-                        </div>
-                        <div class="setting-control">
-                            <div class="toggle-switch" data-toggle="politics"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <label>Rage Bait</label>
-                            <div class="setting-description">Block content designed to provoke anger</div>
-                        </div>
-                        <div class="setting-control">
-                            <div class="toggle-switch" data-toggle="ragebait"></div>
+                    <div class="score-threshold-setting">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label for="scoreThreshold">Score Threshold</label>
+                                <div class="setting-description">Posts at or below this score will be affected by the filtering mode</div>
+                            </div>
+                            <div class="setting-control">
+                                <input type="number" id="scoreThreshold" value="1" min="-100" max="100" step="1">
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <label>Low-Effort Content</label>
-                            <div class="setting-description">Block easily Google-able questions</div>
+                    <div class="conditional-filters-section" id="conditionalFiltersSection">
+                        <h3>Content Filters for Low-Scoring Posts</h3>
+                        <div class="section-description">These filters will only apply to posts at or below the score threshold.</div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Unfunny Jokes</label>
+                                <div class="setting-description">Block cringe-worthy or unfunny humor in low-scoring posts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="conditional-unfunny"></div>
+                            </div>
                         </div>
-                        <div class="setting-control">
-                            <div class="toggle-switch" data-toggle="loweffort"></div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Rage Bait</label>
+                                <div class="setting-description">Block content designed to provoke anger in low-scoring posts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="conditional-ragebait"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Low-Effort Content</label>
+                                <div class="setting-description">Block easily Google-able questions in low-scoring posts</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="conditional-loweffort"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Advertisements</label>
+                                <div class="setting-description">Block promotional user posts in low-scoring posts (not Reddit ads)</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="conditional-advertisement"></div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="setting-row">
-                        <div class="setting-info">
-                            <label>Advertisements</label>
-                            <div class="setting-description">Block promotional user posts (not Reddit ads)</div>
+                    <div class="always-check-section">
+                        <h3>Always Check Regardless of Score</h3>
+                        <div class="section-description">These filters will apply to all posts regardless of their score.</div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Political Content</label>
+                                <div class="setting-description">Block posts about political figures or parties</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="politics"></div>
+                            </div>
                         </div>
-                        <div class="setting-control">
-                            <div class="toggle-switch" data-toggle="advertisement"></div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Unfunny Jokes</label>
+                                <div class="setting-description">Block cringe-worthy or unfunny humor</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="unfunny"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Rage Bait</label>
+                                <div class="setting-description">Block content designed to provoke anger</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="ragebait"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Low-Effort Content</label>
+                                <div class="setting-description">Block easily Google-able questions</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="loweffort"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <label>Advertisements</label>
+                                <div class="setting-description">Block promotional user posts (not Reddit ads)</div>
+                            </div>
+                            <div class="setting-control">
+                                <div class="toggle-switch" data-toggle="advertisement"></div>
+                            </div>
                         </div>
                     </div>
                 </section>

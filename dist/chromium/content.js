@@ -177,16 +177,8 @@ async function processPosts() {
         if (postData) {
             container.setAttribute('id', postData.id); // Assign the unique ID to the element
             
-            // Apply score-based filtering logic
-            if (scoreFilterMode === 'hide' && postData.score <= scoreThreshold) {
-                // Mode 3: Hide posts at or below threshold without AI checking
-                console.log(`Noise Filter: Hiding post with score ${postData.score} (threshold: ${scoreThreshold})`);
-                container.remove();
-                continue;
-            }
-            
-            // For modes 'all' and 'conditional', send to background script for analysis
-            // The background script will handle which filters to apply based on the mode and score
+            // Send all posts to background script for analysis
+            // The background script will handle score-based filtering logic
             browser.runtime.sendMessage({ 
                 action: "analyzePost", 
                 post: postData,
@@ -236,15 +228,69 @@ observer.observe(targetNode, config);
 
 // Handle URL changes (for single-page app navigation)
 let currentUrl = window.location.href;
+
+// Function to handle URL changes
+async function handleUrlChange(oldUrl, newUrl) {
+    console.log(`Noise Filter: URL changed from ${oldUrl} to ${newUrl}`);
+    
+    // Notify background script about navigation to cancel pending requests
+    try {
+        browser.runtime.sendMessage({ action: "tabNavigating", oldUrl: oldUrl, newUrl: newUrl });
+    } catch (e) {
+        console.log("Noise Filter: Could not send navigation message, context likely invalidated.", e);
+    }
+    
+    // Clear extension settings cache when URL changes
+    extensionSettings = null;
+    
+    // Small delay to let the new page load
+    setTimeout(async () => {
+        await processPosts();
+    }, 100);
+}
+
+// Override pushState and replaceState to detect programmatic navigation
+const originalPushState = history.pushState;
+const originalReplaceState = history.replaceState;
+
+history.pushState = function(...args) {
+    const oldUrl = currentUrl;
+    originalPushState.apply(history, args);
+    const newUrl = window.location.href;
+    if (newUrl !== oldUrl) {
+        currentUrl = newUrl;
+        handleUrlChange(oldUrl, newUrl);
+    }
+};
+
+history.replaceState = function(...args) {
+    const oldUrl = currentUrl;
+    originalReplaceState.apply(history, args);
+    const newUrl = window.location.href;
+    if (newUrl !== oldUrl) {
+        currentUrl = newUrl;
+        handleUrlChange(oldUrl, newUrl);
+    }
+};
+
+// Listen for popstate events (back/forward button)
+window.addEventListener('popstate', () => {
+    const oldUrl = currentUrl;
+    const newUrl = window.location.href;
+    if (newUrl !== oldUrl) {
+        currentUrl = newUrl;
+        handleUrlChange(oldUrl, newUrl);
+    }
+});
+
+// Fallback polling for any missed URL changes (reduced frequency)
 setInterval(async () => {
     if (window.location.href !== currentUrl) {
+        const oldUrl = currentUrl;
         currentUrl = window.location.href;
-        // Clear extension settings cache when URL changes
-        extensionSettings = null;
-        // Process posts on the new page
-        await processPosts();
+        handleUrlChange(oldUrl, currentUrl);
     }
-}, 1000);
+}, 2000);
 
 // Notify background script when the page is unloading to cancel pending requests
 window.addEventListener('beforeunload', () => {

@@ -161,7 +161,21 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
                 });
                 await logActivity(post, apiResponse, `hide (${parsedResponse.blocked_topic})`, parsedResponse.blocked_reason);
             } else {
-                await logActivity(post, apiResponse, 'safe', 'Post was deemed safe.');
+                // Post was deemed safe, but check if it should be hidden in "hide" mode
+                if (scoreFilterMode === 'hide' && post.score <= scoreThreshold) {
+                    // In hide mode, posts at or below threshold are hidden even if they passed the "always check" filters
+                    browser.tabs.sendMessage(sender.tab.id, {
+                        action: "hidePost",
+                        postId: post.id,
+                        reason: `Post score ${post.score} is at or below threshold ${scoreThreshold}`,
+                        topic: "hide-low-score"
+                    }).catch(err => {
+                        console.log(`Noise Filter: Could not send 'hidePost' message to tab ${sender.tab.id}. It may have been closed.`, err);
+                    });
+                    await logActivity(post, apiResponse, 'hide (low-score)', `Post score ${post.score} is at or below threshold ${scoreThreshold}`);
+                } else {
+                    await logActivity(post, apiResponse, 'safe', 'Post was deemed safe.');
+                }
             }
         } catch (error) {
             const isCancellation = error.message.startsWith('Request cancelled');
@@ -176,6 +190,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     } else if (message.action === "tabUnloading") {
         if (sender.tab && sender.tab.id) {
             console.log(`Noise Filter: Tab ${sender.tab.id} is unloading. Clearing pending analysis requests.`);
+            rateLimiter.cancelByTabId(sender.tab.id);
+        }
+    } else if (message.action === "tabNavigating") {
+        if (sender.tab && sender.tab.id) {
+            console.log(`Noise Filter: Tab ${sender.tab.id} is navigating from ${message.oldUrl} to ${message.newUrl}. Clearing pending analysis requests.`);
             rateLimiter.cancelByTabId(sender.tab.id);
         }
     }
@@ -260,6 +279,30 @@ async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, 
                 }
             }
         });
+    } else if (scoreFilterMode === 'hide') {
+        // Mode 3: For posts at or below threshold, first check "always check" filters
+        // Then hide if they don't match any filters
+        
+        // Always apply the "always check" filters regardless of score
+        Object.keys(filterDescriptions).forEach(key => {
+            if (activeFilters[key]) {
+                contentTypes.push(filterDescriptions[key]);
+                activeTags.push(key);
+            }
+        });
+        
+        // If post is at or below threshold and doesn't match any "always check" filters,
+        // we'll handle the hiding after the AI analysis
+    }
+
+    // Special handling for hide mode with no filters
+    if (scoreFilterMode === 'hide' && contentTypes.length === 0 && postScore <= scoreThreshold) {
+        // No "always check" filters are enabled, so hide the post immediately
+        return {
+            prompt: 'Hide mode - no always-check filters enabled',
+            responseData: { choices: [{ message: { content: '{"blocked_topic": "hide-low-score", "blocked_reason": "Post score too low", "post_description": "Hidden due to low score"}' } }] },
+            parsedResponse: { blocked_topic: "hide-low-score", blocked_reason: `Post score ${postScore} is at or below threshold ${scoreThreshold}`, post_description: "Hidden due to low score" }
+        };
     }
 
     // If no filters are enabled, don't block anything

@@ -1,8 +1,8 @@
 API Setup Guide using the Free Google Gemini API.
 
-*note that any openai compatible API can be used with this project, but the Google Gemini API is free and good enough, along with a generously high usage limit.
+The Google Gemini API works best with this project, although any other OpenAI Compatible API can be used. To use the Google Gemini API, for free (no credit card!), follow the guide below.
 
-1. Use a browser which is logged in to a personal google account. Any browser is fine.
+1. Use a browser which is logged in to a personal google account.
 
 2. Go to https://aistudio.google.com/apikey
 

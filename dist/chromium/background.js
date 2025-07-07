@@ -204,7 +204,7 @@ async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, 
         politics: 'politics which criticise a political figure, or a political party, or simply mention a political figure. Note that public figures unrelated to politics is not politics',
         ragebait: 'rage-bait',
         loweffort: 'low-effort content, this can mean a post that the writer of the post could have EASILY used google. If a hard google search would need to be used, it\'s not low effort. Some posts may ask a question that\'s more open ended which doesn\'t always make them low effort. low effort content can also be unrelated to asking questions,',
-        advertisement: 'advertisement'
+        advertisement: 'advertisements toward services or products. Reviews of a product are not advertisements, but posts that are clearly trying to sell something are advertisements',
     };
 
     // Default filters configuration for score-based filtering

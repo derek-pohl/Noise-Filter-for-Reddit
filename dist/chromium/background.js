@@ -92,6 +92,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             loweffort: false,
             advertisement: false,
             // Conditional filters for low-scoring posts
+            'conditional-politics': false,
             'conditional-unfunny': false,
             'conditional-ragebait': false,
             'conditional-loweffort': false,
@@ -216,6 +217,7 @@ async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, 
         loweffort: false,
         advertisement: false,
         // Conditional filters (only for low-scoring posts)
+        'conditional-politics': false,
         'conditional-unfunny': false,
         'conditional-ragebait': false,
         'conditional-loweffort': false,

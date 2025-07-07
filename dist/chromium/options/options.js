@@ -196,6 +196,7 @@ function restoreOptions() {
             loweffort: false,
             advertisement: false,
             // Conditional filters (only for low-scoring posts)
+            'conditional-politics': false,
             'conditional-unfunny': false,
             'conditional-ragebait': false,
             'conditional-loweffort': false,
@@ -245,6 +246,7 @@ async function renderLogs() {
             entryDiv.innerHTML = `
                 <p><strong>Timestamp:</strong> ${timestamp}</p>
                 <p><strong>Post:</strong> "${escapeHtml(entry.post.title)}" in ${escapeHtml(entry.post.subreddit)}</p>
+                <p><strong>Score:</strong> ${entry.post.score !== undefined && entry.post.score !== null ? entry.post.score : 'N/A'} upvotes</p>
                 <p><strong>Action:</strong> ${escapeHtml(entry.action)}</p>
                 <p><strong>Reason:</strong> ${escapeHtml(entry.reason)}</p>
                 <details>

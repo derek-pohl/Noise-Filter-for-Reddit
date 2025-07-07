@@ -87,7 +87,56 @@ function getPostData(postElement) {
     // Extract data directly from the shreddit-post element's attributes for reliability.
     const title = postElement.getAttribute('post-title');
     const subreddit = postElement.getAttribute('subreddit-name');
-    const score = parseInt(postElement.getAttribute('score')) || 0;
+    
+    // Try multiple ways to get the score
+    let score = null;
+    
+    // Method 1: Check the score attribute directly
+    const scoreAttr = postElement.getAttribute('score');
+    if (scoreAttr !== null && scoreAttr !== '') {
+        const parsedScore = parseInt(scoreAttr, 10);
+        if (!isNaN(parsedScore)) {
+            score = parsedScore;
+        }
+    }
+    
+    // Method 2: If score attribute is null or invalid, look for shreddit-player-2 element
+    if (score === null) {
+        const playerElement = postElement.querySelector('shreddit-player-2');
+        if (playerElement) {
+            const playerScore = playerElement.getAttribute('post-score');
+            if (playerScore !== null && playerScore !== '') {
+                const parsedScore = parseInt(playerScore, 10);
+                if (!isNaN(parsedScore)) {
+                    score = parsedScore;
+                }
+            }
+        }
+    }
+    
+    // Method 3: If still no score, try to find it in vote-related elements
+    if (score === null) {
+        const voteElements = postElement.querySelectorAll('[data-testid*="vote"], [aria-label*="upvote"], [aria-label*="score"], [class*="vote"]');
+        for (const element of voteElements) {
+            const text = element.textContent || element.getAttribute('aria-label') || '';
+            const match = text.match(/(\d+)/);
+            if (match) {
+                const parsedScore = parseInt(match[1], 10);
+                if (!isNaN(parsedScore)) {
+                    score = parsedScore;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Default to 0 if we still can't find the score
+    if (score === null || isNaN(score)) {
+        score = 0;
+    }
+    
+    // Enhanced logging for debugging
+    console.log(`Noise Filter: Post "${title}" - Score: ${score} (scoreAttr: "${scoreAttr}", method: ${scoreAttr !== null ? 'direct-attribute' : 'fallback-search'})`);
 
     if (!title || !subreddit) {
         return null; // Not a valid post container

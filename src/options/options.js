@@ -5,12 +5,10 @@ const rateLimitInput = document.getElementById('rateLimit');
 const whitelistedSubsInput = document.getElementById('whitelistedSubs');
 const scoreFilterModeSelect = document.getElementById('scoreFilterMode');
 const scoreThresholdInput = document.getElementById('scoreThreshold');
-const saveButton = document.getElementById('saveButton');
 const statusEl = document.getElementById('status');
 const logContainer = document.getElementById('logContainer');
 const refreshLogButton = document.getElementById('refreshLogButton');
 const clearLogButton = document.getElementById('clearLogButton');
-const saveBar = document.getElementById('savebar');
 const conditionalFiltersSection = document.getElementById('conditionalFiltersSection');
 
 // Tab and content filter elements
@@ -33,7 +31,7 @@ tabButtons.forEach(button => {
         
         // Hide save bar on activity log tab
         if (targetTab === 'activity') {
-            saveBar.classList.remove('show');
+
         }
     });
 });
@@ -49,10 +47,7 @@ filterToggles.forEach(toggle => {
             toggle.classList.add('enabled');
         }
         
-        // Show save bar when changes are made
-        if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
-            saveBar.classList.add('show');
-        }
+        saveOptions();
     });
 });
 
@@ -77,18 +72,14 @@ function updateScoreFilterUI() {
 
 scoreFilterModeSelect.addEventListener('change', () => {
     updateScoreFilterUI();
-    if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
-        saveBar.classList.add('show');
-    }
+    saveOptions();
 });
 
 // Show save bar when form inputs change
 [apiKeyInput, baseUrlInput, modelInput, rateLimitInput, whitelistedSubsInput, scoreThresholdInput].forEach(input => {
     if (input) {
         input.addEventListener('input', () => {
-            if (document.querySelector('.tab-button.active').dataset.tab === 'settings') {
-                saveBar.classList.add('show');
-            }
+            saveOptions();
         });
     }
 });
@@ -131,6 +122,9 @@ function saveOptions() {
         showStatus('Score threshold must be between -100 and 100!', 'error');
         return;
     }
+
+    const darkMode = document.querySelector('[data-toggle="dark-mode"]').classList.contains('enabled');
+    const automaticDarkMode = document.querySelector('[data-toggle="automatic-dark-mode"]').classList.contains('enabled');
     
     browser.storage.sync.set({ 
         apiKey, 
@@ -140,13 +134,11 @@ function saveOptions() {
         enabledFilters, 
         whitelistedSubs,
         scoreFilterMode,
-        scoreThreshold
+        scoreThreshold,
+        darkMode,
+        automaticDarkMode
     }).then(() => {
         showStatus('Settings saved successfully!', 'success');
-        // Hide save bar after successful save
-        setTimeout(() => {
-            saveBar.classList.remove('show');
-        }, 2000);
     }).catch(error => {
         showStatus('Failed to save settings: ' + error.message, 'error');
     });
@@ -169,7 +161,9 @@ function restoreOptions() {
         'enabledFilters', 
         'whitelistedSubs',
         'scoreFilterMode',
-        'scoreThreshold'
+        'scoreThreshold',
+        'darkMode',
+        'automaticDarkMode'
     ]).then((result) => {
         apiKeyInput.value = result.apiKey || '';
         baseUrlInput.value = result.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
@@ -218,10 +212,37 @@ function restoreOptions() {
                 toggle.classList.remove('enabled');
             }
         });
+
+        // Restore dark mode settings
+        if (result.darkMode) {
+            document.querySelector('[data-toggle="dark-mode"]').classList.add('enabled');
+        }
+        // Set automatic dark mode to true by default
+        const automaticDarkMode = result.automaticDarkMode !== undefined ? result.automaticDarkMode : true;
+        if (automaticDarkMode) {
+            document.querySelector('[data-toggle="automatic-dark-mode"]').classList.add('enabled');
+        }
+
+        applyTheme();
         
         // Update UI based on score filter mode
         updateScoreFilterUI();
     });
+}
+
+function applyTheme() {
+    const darkModeToggle = document.querySelector('[data-toggle="dark-mode"]');
+    const automaticDarkModeToggle = document.querySelector('[data-toggle="automatic-dark-mode"]');
+
+    const manualDarkMode = darkModeToggle.classList.contains('enabled');
+    const automaticDarkMode = automaticDarkModeToggle.classList.contains('enabled');
+
+    if (automaticDarkMode) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.body.classList.toggle('dark-mode', prefersDark);
+    } else {
+        document.body.classList.toggle('dark-mode', manualDarkMode);
+    }
 }
 
 async function renderLogs() {
@@ -287,9 +308,15 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreOptions();
     renderLogs();
     updateScoreFilterUI();
+
+    const darkModeToggle = document.querySelector('[data-toggle="dark-mode"]');
+    const automaticDarkModeToggle = document.querySelector('[data-toggle="automatic-dark-mode"]');
+
+    darkModeToggle.addEventListener('click', applyTheme);
+    automaticDarkModeToggle.addEventListener('click', applyTheme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
 });
 
 // Event listeners
-saveButton.addEventListener('click', saveOptions);
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);

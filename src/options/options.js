@@ -239,9 +239,9 @@ function applyTheme() {
 
     if (automaticDarkMode) {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.body.classList.toggle('dark-mode', prefersDark);
+        document.documentElement.classList.toggle('dark-mode', prefersDark);
     } else {
-        document.body.classList.toggle('dark-mode', manualDarkMode);
+        document.documentElement.classList.toggle('dark-mode', manualDarkMode);
     }
 }
 
@@ -320,3 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Event listeners
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);
+
+browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.enabledFilters) {
+        restoreOptions();
+    }
+});

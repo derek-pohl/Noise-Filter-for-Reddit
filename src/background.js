@@ -459,3 +459,33 @@ function parseNonJsonResponse(responseText) {
         post_description: responseText.substring(0, 100) + "..."
     };
 }
+
+browser.commands.onCommand.addListener((command) => {
+    browser.storage.sync.get('enabledFilters').then((result) => {
+        const enabledFilters = result.enabledFilters || {};
+        let filterToToggle = null;
+
+        switch (command) {
+            case 'toggle-extension':
+                filterToToggle = 'extension-enabled';
+                break;
+            case 'toggle-home-page':
+                filterToToggle = 'home-page';
+                break;
+            case 'toggle-popular-page':
+                filterToToggle = 'popular-page';
+                break;
+            case 'toggle-all-page':
+                filterToToggle = 'all-page';
+                break;
+            case 'toggle-subreddit-page':
+                filterToToggle = 'subreddit-page';
+                break;
+        }
+
+        if (filterToToggle) {
+            enabledFilters[filterToToggle] = !enabledFilters[filterToToggle];
+            browser.storage.sync.set({ enabledFilters });
+        }
+    });
+});

@@ -4,9 +4,12 @@
     box-sizing: border-box;
 }
 
+html {
+    background-color: #fafafa;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background-color: #fafafa;
     color: #333;
     font-size: 13px;
     line-height: 1.4;
@@ -548,185 +551,188 @@ select:focus {
 }
 
 /* Dark Mode */
-body.dark-mode {
+html.dark-mode {
     background-color: #1a1a1a;
+}
+
+html.dark-mode body {
     color: #e0e0e0;
 }
 
-body.dark-mode .header,
-body.dark-mode .tabs-container {
+html.dark-mode .header,
+html.dark-mode .tabs-container {
     background: #2c2c2c;
     border-bottom-color: #444;
 }
 
-body.dark-mode .header-text h1,
-body.dark-mode .tab-button {
+html.dark-mode .header-text h1,
+html.dark-mode .tab-button {
     color: #e0e0e0;
 }
 
-body.dark-mode .tab-button:hover {
+html.dark-mode .tab-button:hover {
     background: #3a3a3a;
 }
 
-body.dark-mode .tab-button.active {
+html.dark-mode .tab-button.active {
     color: #4da6ff;
     border-bottom-color: #4da6ff;
     background: #3a3a3a;
 }
 
-body.dark-mode .sticky-save-bar {
+html.dark-mode .sticky-save-bar {
     background: #2c2c2c;
     border-bottom-color: #444;
 }
 
-body.dark-mode .settings-section {
+html.dark-mode .settings-section {
     background: #2c2c2c;
     border-color: #444;
 }
 
-body.dark-mode .settings-section h2 {
+html.dark-mode .settings-section h2 {
     background: #3a3a3a;
     border-bottom-color: #444;
     color: #e0e0e0;
 }
 
-body.dark-mode .section-description {
+html.dark-mode .section-description {
     background: #2c2c2c;
     border-bottom-color: #444;
     color: #b0b0b0;
 }
 
-body.dark-mode .setting-row {
+html.dark-mode .setting-row {
     border-bottom-color: #444;
 }
 
-body.dark-mode .setting-row:hover {
+html.dark-mode .setting-row:hover {
     background: #3a3a3a;
 }
 
-body.dark-mode .setting-info label {
+html.dark-mode .setting-info label {
     color: #e0e0e0;
 }
 
-body.dark-mode .setting-description {
+html.dark-mode .setting-description {
     color: #b0b0b0;
 }
 
-body.dark-mode .setting-control input,
-body.dark-mode .setting-control textarea,
-body.dark-mode select {
+html.dark-mode .setting-control input,
+html.dark-mode .setting-control textarea,
+html.dark-mode select {
     background: #1a1a1a;
     border-color: #555;
     color: #e0e0e0;
 }
 
-body.dark-mode .setting-control input:focus,
-body.dark-mode .setting-control textarea:focus,
-body.dark-mode select:focus {
+html.dark-mode .setting-control input:focus,
+html.dark-mode .setting-control textarea:focus,
+html.dark-mode select:focus {
     border-color: #4da6ff;
     box-shadow: 0 0 0 1px #4da6ff;
 }
 
-body.dark-mode .toggle-switch {
+html.dark-mode .toggle-switch {
     background: #555;
 }
 
-body.dark-mode .toggle-switch.enabled {
+html.dark-mode .toggle-switch.enabled {
     background: #4da6ff;
 }
 
-body.dark-mode .activity-container {
+html.dark-mode .activity-container {
     background: #2c2c2c;
     border-color: #444;
 }
 
-body.dark-mode .activity-header {
+html.dark-mode .activity-header {
     background: #3a3a3a;
     border-bottom-color: #444;
 }
 
-body.dark-mode .activity-header h2 {
+html.dark-mode .activity-header h2 {
     color: #e0e0e0;
 }
 
-body.dark-mode .btn-secondary {
+html.dark-mode .btn-secondary {
     background: #555;
     color: #e0e0e0;
     border-color: #777;
 }
 
-body.dark-mode .btn-secondary:hover {
+html.dark-mode .btn-secondary:hover {
     background: #666;
 }
 
-body.dark-mode .btn-danger {
+html.dark-mode .btn-danger {
     background: #5c1f1f;
     color: #ffcdd2;
     border-color: #8c2f2f;
 }
 
-body.dark-mode .btn-danger:hover {
+html.dark-mode .btn-danger:hover {
     background: #8c2f2f;
 }
 
-body.dark-mode .log-container {
+html.dark-mode .log-container {
     background: #1a1a1a;
 }
 
-body.dark-mode .log-entry {
+html.dark-mode .log-entry {
     background: #2c2c2c;
     border-bottom-color: #444;
 }
 
-body.dark-mode .log-entry strong {
+html.dark-mode .log-entry strong {
     color: #e0e0e0;
 }
 
-body.dark-mode .log-entry summary {
+html.dark-mode .log-entry summary {
     background: #3a3a3a;
     color: #4da6ff;
 }
 
-body.dark-mode .log-entry summary:hover {
+html.dark-mode .log-entry summary:hover {
     background: #4a4a4a;
 }
 
-body.dark-mode .log-entry pre {
+html.dark-mode .log-entry pre {
     background: #1a1a1a;
     border-color: #444;
     color: #e0e0e0;
 }
 
-body.dark-mode .log-container::-webkit-scrollbar-track {
+html.dark-mode .log-container::-webkit-scrollbar-track {
     background: #2c2c2c;
 }
 
-body.dark-mode .log-container::-webkit-scrollbar-thumb {
+html.dark-mode .log-container::-webkit-scrollbar-thumb {
     background: #555;
 }
 
-body.dark-mode .log-container::-webkit-scrollbar-thumb:hover {
+html.dark-mode .log-container::-webkit-scrollbar-thumb:hover {
     background: #777;
 }
 
-body.dark-mode .conditional-filters-section,
-body.dark-mode .always-check-section {
+html.dark-mode .conditional-filters-section,
+html.dark-mode .always-check-section {
     background: #3a3a3a;
     border-color: #555;
 }
 
-body.dark-mode .conditional-filters-section h3,
-body.dark-mode .always-check-section h3 {
+html.dark-mode .conditional-filters-section h3,
+html.dark-mode .always-check-section h3 {
     color: #e0e0e0;
 }
 
-body.dark-mode .conditional-filters-section .section-description,
-body.dark-mode .always-check-section .section-description {
+html.dark-mode .conditional-filters-section .section-description,
+html.dark-mode .always-check-section .section-description {
     color: #b0b0b0;
 }
 
-body.dark-mode .conditional-filters-section .setting-row,
-body.dark-mode .always-check-section .setting-row {
+html.dark-mode .conditional-filters-section .setting-row,
+html.dark-mode .always-check-section .setting-row {
     background: #2c2c2c;
     border-color: #444;
 }

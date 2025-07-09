@@ -331,6 +331,76 @@ document.addEventListener('DOMContentLoaded', () => {
 refreshLogButton.addEventListener('click', renderLogs);
 clearLogButton.addEventListener('click', clearLogs);
 
+document.getElementById('exportButton').addEventListener('click', exportSettings);
+document.getElementById('importButton').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', importSettings);
+
+
+// --- Data Management ---
+
+async function exportSettings() {
+    try {
+        const settings = await browser.storage.sync.get(null); // Get all settings
+        const settingsJson = JSON.stringify(settings, null, 2);
+        const blob = new Blob([settingsJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'noise-filter-settings.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showStatus('Settings exported successfully!', 'success');
+    } catch (error) {
+        showStatus(`Failed to export settings: ${error.message}`, 'error');
+    }
+}
+
+function importSettings(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const settings = JSON.parse(e.target.result);
+            
+            // Basic validation
+            if (typeof settings !== 'object' || settings === null || !settings.apiKey) {
+                throw new Error('Invalid or corrupted settings file.');
+            }
+
+            // Clear existing settings before importing
+            await browser.storage.sync.clear();
+            
+            // Set the new settings
+            await browser.storage.sync.set(settings);
+
+            showStatus('Settings imported successfully! Reloading...', 'success');
+            
+            // Reload the options page to reflect the new settings
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            showStatus(`Failed to import settings: ${error.message}`, 'error');
+        } finally {
+            // Reset the file input so the same file can be loaded again
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
+
 browser.storage.onChanged.addListener((changes, area) => {
     if (area === 'sync' && changes.enabledFilters) {
         restoreOptions();

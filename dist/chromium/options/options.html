@@ -361,6 +361,30 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Data Management -->
+                <section class="settings-section">
+                    <h2>Data Management</h2>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Export Settings</label>
+                            <div class="setting-description">Save your current settings to a file.</div>
+                        </div>
+                        <div class="setting-control">
+                            <button id="exportButton" class="btn-primary">Export</button>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <label>Import Settings</label>
+                            <div class="setting-description">Load settings from a file. This will overwrite your current settings.</div>
+                        </div>
+                        <div class="setting-control">
+                            <button id="importButton" class="btn-secondary">Import</button>
+                            <input type="file" id="importFile" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
 

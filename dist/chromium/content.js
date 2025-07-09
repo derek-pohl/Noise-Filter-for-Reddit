@@ -2,6 +2,7 @@
 const PROCESSED_ATTRIBUTE = 'data-noise-filter-processed';
 let postCounter = 0;
 let extensionSettings = null;
+let blockDisplayMode = 2; // Default to remove (current behavior)
 
 // Function to detect what type of Reddit page we're on
 function detectPageType() {
@@ -161,9 +162,10 @@ async function processPosts() {
     }
     
     // Get score-based filtering settings
-    const result = await browser.storage.sync.get(['scoreFilterMode', 'scoreThreshold']);
+    const result = await browser.storage.sync.get(['scoreFilterMode', 'scoreThreshold', 'blockDisplayMode']);
     const scoreFilterMode = result.scoreFilterMode || 'conditional';
     const scoreThreshold = result.scoreThreshold || 1;
+    blockDisplayMode = result.blockDisplayMode !== undefined ? result.blockDisplayMode : 2;
     
     // This selector targets individual post containers in Reddit's feed.
     // Reddit has updated its structure to use the <shreddit-post> custom element,
@@ -190,23 +192,41 @@ async function processPosts() {
 }
 
 // Listen for messages from the background script
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.action === "hidePost") {
         const postElement = document.getElementById(message.postId);
         if (postElement) {
-            console.log(`Noise Filter: Removing post (${message.topic}). Reason: ${message.reason}`);
-            postElement.remove();
+            console.log(`Noise Filter: Applying display mode for post (${message.topic}). Reason: ${message.reason}`);
+            switch (blockDisplayMode) {
+                case 0: // Dim
+                    postElement.style.opacity = '0.3';
+                    break;
+                case 1: // Blur
+                    postElement.style.filter = 'blur(8px)';
+                    break;
+                case 2: // Remove (default)
+                default:
+                    postElement.remove();
+                    break;
+            }
         }
     } else if (message.action === "settingsChanged") {
         // Reload settings when they change
         extensionSettings = null;
+        const result = await browser.storage.sync.get(['blockDisplayMode']);
+        blockDisplayMode = result.blockDisplayMode !== undefined ? result.blockDisplayMode : 2;
     }
 });
 
 // Listen for storage changes to update settings
-browser.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'sync' && changes.enabledFilters) {
-        extensionSettings = null;
+browser.storage.onChanged.addListener(async (changes, areaName) => {
+    if (areaName === 'sync') {
+        if (changes.enabledFilters) {
+            extensionSettings = null;
+        }
+        if (changes.blockDisplayMode !== undefined) {
+            blockDisplayMode = changes.blockDisplayMode.newValue;
+        }
     }
 });
 

@@ -3,6 +3,7 @@ const baseUrlInput = document.getElementById('baseUrl');
 const modelInput = document.getElementById('model');
 const rateLimitInput = document.getElementById('rateLimit');
 const whitelistedSubsInput = document.getElementById('whitelistedSubs');
+const blockDisplayModeInput = document.getElementById('blockDisplayMode');
 const scoreFilterModeSelect = document.getElementById('scoreFilterMode');
 const scoreThresholdInput = document.getElementById('scoreThreshold');
 const statusEl = document.getElementById('status');
@@ -84,6 +85,10 @@ scoreFilterModeSelect.addEventListener('change', () => {
     }
 });
 
+blockDisplayModeInput.addEventListener('input', () => {
+    saveOptions();
+});
+
 function saveOptions() {
     const apiKey = apiKeyInput.value;
     const baseUrl = baseUrlInput.value;
@@ -125,6 +130,7 @@ function saveOptions() {
 
     const darkMode = document.querySelector('[data-toggle="dark-mode"]').classList.contains('enabled');
     const automaticDarkMode = document.querySelector('[data-toggle="automatic-dark-mode"]').classList.contains('enabled');
+    const blockDisplayMode = parseInt(blockDisplayModeInput.value);
     
     browser.storage.sync.set({ 
         apiKey, 
@@ -136,7 +142,8 @@ function saveOptions() {
         scoreFilterMode,
         scoreThreshold,
         darkMode,
-        automaticDarkMode
+        automaticDarkMode,
+        blockDisplayMode
     }).then(() => {
         showStatus('Settings saved successfully!', 'success');
     }).catch(error => {
@@ -163,7 +170,8 @@ function restoreOptions() {
         'scoreFilterMode',
         'scoreThreshold',
         'darkMode',
-        'automaticDarkMode'
+        'automaticDarkMode',
+        'blockDisplayMode'
     ]).then((result) => {
         apiKeyInput.value = result.apiKey || '';
         baseUrlInput.value = result.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
@@ -222,6 +230,8 @@ function restoreOptions() {
         if (automaticDarkMode) {
             document.querySelector('[data-toggle="automatic-dark-mode"]').classList.add('enabled');
         }
+
+        blockDisplayModeInput.value = result.blockDisplayMode !== undefined ? result.blockDisplayMode : 2;
 
         applyTheme();
         

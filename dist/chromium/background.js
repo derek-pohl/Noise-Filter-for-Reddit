@@ -80,7 +80,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const { post, scoreFilterMode, scoreThreshold } = message;
         const tabId = sender.tab.id;
 
-        const { apiKey, baseUrl, model, enabledFilters, whitelistedSubs } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'enabledFilters', 'whitelistedSubs']);
+        const { apiKey, baseUrl, model, enabledFilters, whitelistedSubs, blockDisplayMode } = await browser.storage.sync.get(['apiKey', 'baseUrl', 'model', 'enabledFilters', 'whitelistedSubs', 'blockDisplayMode']);
         
         // Check if extension is enabled
         const defaultFilters = {
@@ -155,7 +155,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
                     action: "hidePost",
                     postId: post.id,
                     reason: parsedResponse.blocked_reason,
-                    topic: parsedResponse.blocked_topic
+                    topic: parsedResponse.blocked_topic,
+                    blockDisplayMode: blockDisplayMode // Pass the display mode
                 }).catch(err => {
                     console.log(`Noise Filter: Could not send 'hidePost' message to tab ${sender.tab.id}. It may have been closed.`, err);
                 });
@@ -168,7 +169,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
                         action: "hidePost",
                         postId: post.id,
                         reason: `Post score ${post.score} is at or below threshold ${scoreThreshold}`,
-                        topic: "hide-low-score"
+                        topic: "hide-low-score",
+                        blockDisplayMode: blockDisplayMode // Pass the display mode
                     }).catch(err => {
                         console.log(`Noise Filter: Could not send 'hidePost' message to tab ${sender.tab.id}. It may have been closed.`, err);
                     });

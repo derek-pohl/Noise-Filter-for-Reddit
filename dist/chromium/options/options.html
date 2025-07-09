@@ -5,26 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Noise Filter Options</title>
     <link rel="stylesheet" href="options.css">
-    <script>
-        // Apply dark mode instantly to prevent flash
-        (async () => {
-            try {
-                const storage = await browser.storage.sync.get(['darkMode', 'automaticDarkMode']);
-                const manualDarkMode = storage.darkMode || false;
-                const automaticDarkMode = storage.automaticDarkMode !== undefined ? storage.automaticDarkMode : true;
-
-                if (automaticDarkMode) {
-                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.documentElement.classList.add('dark-mode');
-                    }
-                } else if (manualDarkMode) {
-                    document.documentElement.classList.add('dark-mode');
-                }
-            } catch (e) {
-                // Ignore errors, default to light mode
-            }
-        })();
-    </script>
+    <script src="dark_mode_init.js"></script>
 </head>
 <body>
     <div class="header">

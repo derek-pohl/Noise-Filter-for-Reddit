@@ -29,7 +29,7 @@ A browser extension that blocks content that is of no intrinsic value to the use
 
 1.  **Download the Extension:**
     *   [Download for Chromium-based browsers (Chrome, Edge, etc.)](https://chromewebstore.google.com/detail/noise-filter-for-reddit/adddebckckijpfbbggfjbohakfifaicf)
-    *   [Download for Firefox](link_to_firefox_download)
+    *   [Download for Firefox](https://raw.githubusercontent.com/derek-pohl/Noise-Filter-for-Reddit/refs/heads/main/dist/firefox.zip)
 2.  **Install the Extension: (firefox)**
     *   **Firefox:**
         1.  Open Firefox and navigate to `about:addons`.

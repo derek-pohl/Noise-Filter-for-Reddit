@@ -86,6 +86,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const defaultFilters = {
             'extension-enabled': true,
             'json-output': false,
+            'hack-club-mode': false,
             unfunny: false,
             politics: false,
             ragebait: false,
@@ -107,17 +108,26 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             return;
         }
         
-        if (!apiKey) {
-            console.warn("Noise Filter: API key not set. Please set it in the extension options.");
-            return; // Don't proceed without an API key
-        }
-        if (!baseUrl) {
-            console.warn("Noise Filter: Base URL not set. Please set it in the extension options.");
-            return; // Don't proceed without a base URL
-        }
-        if (!model) {
-            console.warn("Noise Filter: Model not set. Please set it in the extension options.");
-            return; // Don't proceed without a model
+        // Check API configuration based on Hack Club mode
+        const isHackClubMode = activeFilters['hack-club-mode'];
+        
+        if (!isHackClubMode) {
+            // Regular mode - require API key, base URL, and model
+            if (!apiKey) {
+                console.warn("Noise Filter: API key not set. Please set it in the extension options.");
+                return;
+            }
+            if (!baseUrl) {
+                console.warn("Noise Filter: Base URL not set. Please set it in the extension options.");
+                return;
+            }
+            if (!model) {
+                console.warn("Noise Filter: Model not set. Please set it in the extension options.");
+                return;
+            }
+        } else {
+            // Hack Club mode - no API key required, use Hack Club endpoint
+            console.log("Noise Filter: Using Hack Club mode");
         }
 
         // Extract subreddit name without r/ prefix
@@ -142,7 +152,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         try {
             // Add the API call to the rate-limited queue
             const apiResult = await rateLimiter.addToQueue(() => 
-                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output'], scoreFilterMode, scoreThreshold),
+                callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters, activeFilters['json-output'], scoreFilterMode, scoreThreshold, isHackClubMode),
                 tabId
             );
             
@@ -217,7 +227,7 @@ async function logActivity(post, apiData, action, reason) {
     await browser.storage.local.set({ activityLog: newLog });
 }
 
-async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, forceJsonOutput = true, scoreFilterMode = 'conditional', scoreThreshold = 1) {
+async function callOpenAIApi(post, apiKey, baseUrl, model, enabledFilters = {}, forceJsonOutput = true, scoreFilterMode = 'conditional', scoreThreshold = 1, isHackClubMode = false) {
     // Build the content types list based on enabled filters and score-based filtering mode
     const contentTypes = [];
     const filterDescriptions = {
@@ -342,39 +352,67 @@ Title: ${post.title}
 Body Text: ${post.body}
 `;
 
-    // Use the base URL as provided by the user
-    let apiUrl = baseUrl;
-    // Remove trailing slash if present
-    if (apiUrl.endsWith('/')) {
-        apiUrl = apiUrl.slice(0, -1);
-    }
-    // Append the chat completions endpoint
-    apiUrl = `${apiUrl}/chat/completions`;
+    // Configure API endpoint and request based on mode
+    let apiUrl;
+    let requestBody;
+    let fetchOptions;
     
-    const requestBody = {
-        model: model,
-        messages: [
-            {
-                role: "user",
-                content: prompt
-            }
-        ],
-        temperature: 0.1
-    };
+    if (isHackClubMode) {
+        // Hack Club mode configuration
+        apiUrl = 'https://ai.hackclub.com/chat/completions';
+        
+        requestBody = {
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ]
+        };
+        
+        fetchOptions = {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+                // No Authorization header needed for Hack Club API
+            },
+            body: JSON.stringify(requestBody)
+        };
+    } else {
+        // Regular mode configuration
+        apiUrl = baseUrl;
+        // Remove trailing slash if present
+        if (apiUrl.endsWith('/')) {
+            apiUrl = apiUrl.slice(0, -1);
+        }
+        // Append the chat completions endpoint
+        apiUrl = `${apiUrl}/chat/completions`;
+        
+        requestBody = {
+            model: model,
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.1
+        };
 
-    // Only add response_format if forceJsonOutput is enabled
-    if (forceJsonOutput) {
-        requestBody.response_format = { type: "json_object" };
+        // Only add response_format if forceJsonOutput is enabled
+        if (forceJsonOutput) {
+            requestBody.response_format = { type: "json_object" };
+        }
+        
+        fetchOptions = {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(requestBody)
+        };
     }
-    
-    const fetchOptions = {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(requestBody)
-    };
 
     const response = await fetch(apiUrl, fetchOptions);
 

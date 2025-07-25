@@ -48,6 +48,11 @@ filterToggles.forEach(toggle => {
             toggle.classList.add('enabled');
         }
         
+        // Handle Hack Club mode toggle
+        if (toggle.dataset.toggle === 'hack-club-mode') {
+            handleHackClubModeToggle(!isEnabled);
+        }
+        
         saveOptions();
     });
 });
@@ -110,10 +115,16 @@ function saveOptions() {
         enabledFilters[filterId] = toggle.classList.contains('enabled');
     });
     
-    // Validate required fields
-    if (!apiKey || !baseUrl || !model) {
-        showStatus('API Key, Base URL, and Model are required!', 'error');
-        return;
+    // Check if Hack Club mode is enabled
+    const hackClubMode = enabledFilters['hack-club-mode'];
+    
+    // Skip validation if Hack Club mode is enabled (it provides its own API settings)
+    if (!hackClubMode) {
+        // Validate required fields
+        if (!apiKey || !baseUrl || !model) {
+            showStatus('API Key, Base URL, and Model are required!', 'error');
+            return;
+        }
     }
     
     // Validate rate limit
@@ -132,23 +143,76 @@ function saveOptions() {
     const automaticDarkMode = document.querySelector('[data-toggle="automatic-dark-mode"]').classList.contains('enabled');
     const blockDisplayMode = parseInt(blockDisplayModeInput.value);
     
-    browser.storage.sync.set({ 
-        apiKey, 
-        baseUrl, 
-        model, 
-        rateLimit, 
-        enabledFilters, 
-        whitelistedSubs,
-        scoreFilterMode,
-        scoreThreshold,
-        darkMode,
-        automaticDarkMode,
-        blockDisplayMode
-    }).then(() => {
-        showStatus('Settings saved successfully!', 'success');
-    }).catch(error => {
-        showStatus('Failed to save settings: ' + error.message, 'error');
+    // Get current stored settings to preserve userApiSettings if they exist
+    browser.storage.sync.get(['userApiSettings']).then((result) => {
+        const saveData = { 
+            apiKey, 
+            baseUrl, 
+            model, 
+            rateLimit, 
+            enabledFilters, 
+            whitelistedSubs,
+            scoreFilterMode,
+            scoreThreshold,
+            darkMode,
+            automaticDarkMode,
+            blockDisplayMode
+        };
+        
+        // Preserve userApiSettings if it exists
+        if (result.userApiSettings) {
+            saveData.userApiSettings = result.userApiSettings;
+        }
+        
+        browser.storage.sync.set(saveData).then(() => {
+            showStatus('Settings saved successfully!', 'success');
+        }).catch(error => {
+            showStatus('Failed to save settings: ' + error.message, 'error');
+        });
     });
+}
+
+function handleHackClubModeToggle(isEnabled) {
+    if (isEnabled) {
+        // Store current user settings before switching to Hack Club mode
+        const userApiSettings = {
+            apiKey: apiKeyInput.value,
+            baseUrl: baseUrlInput.value,
+            model: modelInput.value
+        };
+        
+        // Set Hack Club API settings
+        apiKeyInput.value = '';
+        baseUrlInput.value = 'https://ai.hackclub.com';
+        modelInput.value = '';
+        
+        // Disable the input fields
+        apiKeyInput.disabled = true;
+        baseUrlInput.disabled = true;
+        modelInput.disabled = true;
+        
+        // Store user settings for later restoration
+        browser.storage.sync.set({ userApiSettings });
+    } else {
+        // Restore user settings when disabling Hack Club mode
+        browser.storage.sync.get(['userApiSettings']).then((result) => {
+            if (result.userApiSettings) {
+                apiKeyInput.value = result.userApiSettings.apiKey || '';
+                baseUrlInput.value = result.userApiSettings.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
+                modelInput.value = result.userApiSettings.model || 'gemma-3-27b-it';
+            } else {
+                // Fallback to defaults if no user settings stored
+                apiKeyInput.value = '';
+                baseUrlInput.value = 'https://generativelanguage.googleapis.com/v1beta/openai';
+                modelInput.value = 'gemma-3-27b-it';
+            }
+            
+            // Re-enable the input fields
+            apiKeyInput.disabled = false;
+            baseUrlInput.disabled = false;
+            modelInput.disabled = false;
+        });
+    }
 }
 
 function showStatus(message, type) {
@@ -191,6 +255,7 @@ function restoreOptions() {
         const enabledFilters = result.enabledFilters || {
             'extension-enabled': true,
             'json-output': false,
+            'hack-club-mode': false,
             // Always check filters (regardless of score)
             politics: false,
             unfunny: false,
@@ -237,6 +302,11 @@ function restoreOptions() {
         
         // Update UI based on score filter mode
         updateScoreFilterUI();
+        
+        // Handle Hack Club mode UI state on restore
+        if (enabledFilters['hack-club-mode']) {
+            handleHackClubModeToggle(true);
+        }
     });
 }
 

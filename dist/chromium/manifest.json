@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Noise Filter for Reddit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A browser extension that blocks content that is of no intrinsic value to the user.",
 
   "permissions": [
@@ -17,7 +17,7 @@
     "open_in_tab": true
   },
   "background": {
-    "scripts": ["background.js"],
+    "service_worker": "background.js",
     "type": "module"
   },
 
@@ -27,12 +27,6 @@
       "js": ["lib/webextension-polyfill.js", "content.js"]
     }
   ],
-
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "9f06e0da-f98c-43e6-8ffb-ad6fb7115c5e"
-    }
-  },
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
